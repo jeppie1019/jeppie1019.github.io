@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>城市版數獨遊戲</title>
+    <title>城市版數獨遊戲 (完整)</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.js"></script>
     <style>
         /* --- CSS 樣式 --- */
@@ -15,7 +15,7 @@
             min-height: 100vh;
             background-color: #f4f4f4;
             margin: 0;
-            overflow: hidden; /* 防止動畫超出視窗導致捲軸 */
+            overflow: hidden; 
         }
 
         .container {
@@ -41,10 +41,10 @@
             grid-template-rows: repeat(9, 1fr);
             width: 450px; 
             height: 450px; 
-            border-top: 3px solid #333; /* 頂部邊界 */
-            border-left: 3px solid #333; /* 左側邊界 */
+            border-top: 3px solid #333; 
+            border-left: 3px solid #333; 
             margin: 20px auto;
-            box-sizing: content-box; /* 確保總寬度為 450px + 6px 邊界 */
+            box-sizing: content-box; 
         }
 
         .cell {
@@ -71,20 +71,17 @@
         }
 
         /* 加粗 9宮格水平分隔線 (第 3, 6, 9 行的底部) */
-        .grid > div:nth-child(27n) ~ div.cell {
-            border-top: 3px solid #333;
+        .cell:nth-child(n+19):nth-child(-n+27),
+        .cell:nth-child(n+46):nth-child(-n+54),
+        .cell:nth-child(n+73):nth-child(-n+81) {
+            border-bottom-width: 3px;
+            border-bottom-color: #333;
+        }
+        /* 修正底部的粗線，確保最後一行單元格的底線是 3px 粗 */
+        .grid > div:nth-child(n+73):nth-child(-n+81) {
+             border-bottom-width: 3px;
         }
         
-        /* 讓第 28 到 36 個單元格具備 3x3 頂部粗線 */
-        .grid > div:nth-child(28), .grid > div:nth-child(37), .grid > div:nth-child(46), 
-        .grid > div:nth-child(55), .grid > div:nth-child(64), .grid > div:nth-child(73) {
-            border-top: none; /* 重設被上一個選擇器影響的單元格 */
-        }
-        .grid > div:nth-child(28), .grid > div:nth-child(37), .grid > div:nth-child(46) {
-             /* 確保第 4, 7 行的單元格頂部粗線不會被上一個選擇器影響 */
-            border-top: 3px solid #333;
-        }
-
 
         .cell.fixed {
             background-color: #eee;
@@ -97,7 +94,7 @@
             color: #cc0000 !important; 
         }
 
-        /* --- 控制按鈕樣式 (與前版相同) --- */
+        /* --- 控制按鈕樣式 --- */
         .controls button {
             padding: 10px 20px;
             margin: 10px 10px;
@@ -114,26 +111,23 @@
             margin-top: 10px;
         }
 
-        /* ---------------------------------------------------- */
         /* --- 聖誕老人和禮物動畫 CSS --- */
-        /* ---------------------------------------------------- */
         .celebration-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            pointer-events: none; /* 讓點擊事件穿透 */
-            z-index: 100; /* 確保在最上層 */
+            pointer-events: none; 
+            z-index: 100; 
             overflow: hidden;
-            display: none; /* 預設隱藏 */
+            display: none; 
         }
 
-        /* 聖誕老人雪橇 (使用簡單文字和 CSS) */
         .santa-sleigh {
             position: absolute;
             top: 50px;
-            left: -300px; /* 從左側外面開始 */
+            left: -300px; 
             font-size: 80px;
             color: #cc0000;
             text-shadow: 2px 2px 5px rgba(0,0,0,0.5);
@@ -146,11 +140,10 @@
                 transform: translateX(0);
             }
             100% {
-                transform: translateX(calc(100vw + 300px)); /* 飛出右側 */
+                transform: translateX(calc(100vw + 300px)); 
             }
         }
         
-        /* 禮物丟落動畫 */
         .gift {
             position: absolute;
             width: 30px;
@@ -158,7 +151,7 @@
             background-color: #008000;
             border: 2px solid #cc0000;
             border-radius: 5px;
-            transform: rotate(45deg); /* 菱形禮物 */
+            transform: rotate(45deg); 
             opacity: 0;
             pointer-events: none;
             z-index: 101;
@@ -180,6 +173,38 @@
                 transform: rotate(225deg) scale(0.5);
             }
         }
+        
+        /* --- 自動求解嘲諷訊息樣式 --- */
+        .taunt-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9); 
+            color: #ff0000; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 200; 
+            opacity: 0; 
+            pointer-events: none;
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        .taunt-message {
+            font-size: 10vw; 
+            font-weight: 900;
+            text-shadow: 0 0 20px rgba(255, 0, 0, 0.8);
+            transform: scale(0.9);
+            animation: taunt-pulse 0.5s ease-in-out; 
+        }
+
+        @keyframes taunt-pulse {
+            0% { transform: scale(0.9); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
     </style>
 </head>
 <body>
@@ -200,6 +225,12 @@
     <div class="celebration-overlay" id="celebration-overlay">
         <span class="santa-sleigh" id="santa-sleigh">🎅🏻</span>
     </div>
+    
+    <div class="taunt-overlay" id="taunt-overlay">
+        <span class="taunt-message">
+            你超嫩！
+        </span>
+    </div>
 
     <script>
         /* --- JavaScript 核心邏輯 --- */
@@ -210,11 +241,12 @@
         const messageElement = document.getElementById('message');
         const celebrationOverlay = document.getElementById('celebration-overlay');
         const santaSleigh = document.getElementById('santa-sleigh');
+        const tauntOverlay = document.getElementById('taunt-overlay'); // 新增嘲諷元素引用
 
         let currentGrid = []; 
         let initialGrid = []; 
 
-        // --- 核心演算法：檢查、求解與隨機生成 (與前版相同) ---
+        // --- 數獨核心演算法 ---
 
         function isValid(board, row, col, number) {
             for (let k = 0; k < GRID_SIZE; k++) {
@@ -290,57 +322,39 @@
 
         // --- 慶祝動畫函式 ---
 
-        /**
-         * 觸發煙火效果 (使用 canvas-confetti 函式庫)
-         */
         function triggerFireworks() {
             const duration = 5 * 1000;
             const animationEnd = Date.now() + duration;
             const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 1000 };
-
-            function randomInRange(min, max) {
-                return Math.random() * (max - min) + min;
-            }
+            function randomInRange(min, max) { return Math.random() * (max - min) + min; }
 
             const interval = setInterval(function() {
                 const timeLeft = animationEnd - Date.now();
-
-                if (timeLeft <= 0) {
-                    return clearInterval(interval);
-                }
-
+                if (timeLeft <= 0) return clearInterval(interval);
                 const particleCount = 50 * (timeLeft / duration);
-
-                // 左右兩側噴射
                 confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
                 confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
             }, 250);
         }
         
-        /**
-         * 顯示聖誕老人和丟禮物動畫
-         */
         function showSanta() {
             celebrationOverlay.style.display = 'block';
             
             // 重啟飛行動畫
             santaSleigh.style.animation = 'none';
-            void santaSleigh.offsetWidth; // 強制重繪
+            void santaSleigh.offsetWidth;
             santaSleigh.style.animation = 'fly-across 15s linear forwards';
             
-            // 丟禮物的間隔
             let dropCount = 0;
             const giftInterval = setInterval(() => {
-                if (dropCount >= 10) { // 丟 10 個禮物
+                if (dropCount >= 10) { 
                     clearInterval(giftInterval);
                     setTimeout(() => {
-                         // 延遲隱藏，等待聖誕老人飛走
                         celebrationOverlay.style.display = 'none';
                     }, 5000); 
                     return;
                 }
                 
-                // 創建禮物元素
                 const gift = document.createElement('div');
                 gift.classList.add('gift');
                 
@@ -352,10 +366,8 @@
                 
                 celebrationOverlay.appendChild(gift);
                 
-                // 觸發丟落動畫
                 setTimeout(() => {
                     gift.classList.add('dropping');
-                    // 丟完後移除禮物
                     setTimeout(() => gift.remove(), 3000); 
                 }, 50); 
                 
@@ -363,7 +375,20 @@
             }, 800);
         }
 
-        // --- 遊戲狀態與渲染 (部分與前版相同) ---
+        /**
+         * 顯示嘲諷訊息並在 2 秒後隱藏
+         */
+        function showTauntMessage() {
+            tauntOverlay.style.pointerEvents = 'auto'; 
+            tauntOverlay.style.opacity = 1;
+
+            setTimeout(() => {
+                tauntOverlay.style.opacity = 0;
+                tauntOverlay.style.pointerEvents = 'none';
+            }, 2000); // 2 秒後自動隱藏
+        }
+
+        // --- 遊戲狀態與渲染 ---
 
         function renderGrid(board, highlightErrors = false) {
             gridElement.innerHTML = ''; 
@@ -454,7 +479,8 @@
 
         function initGame() {
             messageElement.textContent = '';
-            celebrationOverlay.style.display = 'none'; // 隱藏動畫
+            celebrationOverlay.style.display = 'none'; 
+            tauntOverlay.style.opacity = 0; // 確保嘲諷訊息隱藏
             
             initialGrid = generateSudoku();
             currentGrid = initialGrid.map(row => [...row]); 
@@ -464,14 +490,19 @@
 
         // --- 事件監聽器 ---
         solveButton.addEventListener('click', () => {
-             // 確保自動求解時動畫不會啟動
+             // 1. 顯示嘲諷訊息
+            showTauntMessage(); 
+             
             celebrationOverlay.style.display = 'none';
             let boardToSolve = initialGrid.map(row => [...row]); 
             
             if (solveSudoku(boardToSolve)) {
-                currentGrid = boardToSolve; 
-                renderGrid(currentGrid, false); 
-                updateMessage('✅ 數獨已自動求解完畢！', 'blue');
+                // 等待嘲諷訊息淡出後再顯示解
+                setTimeout(() => {
+                    currentGrid = boardToSolve; 
+                    renderGrid(currentGrid, false); 
+                    updateMessage('✅ 數獨已自動求解完畢！', 'blue');
+                }, 500); 
             } else {
                 updateMessage('❌ 錯誤：該數獨無解。');
             }
