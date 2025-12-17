@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>城市版數獨遊戲 (完整)</title>
+    <title>城市版數獨遊戲 (完整終極版)</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.js"></script>
     <style>
         /* --- CSS 樣式 --- */
@@ -16,6 +16,19 @@
             background-color: #f4f4f4;
             margin: 0;
             overflow: hidden; 
+            transition: transform 0.1s; /* 用於流血震動效果 */
+        }
+        
+        /* 答錯時，應用於 body 元素的震動動畫 */
+        .shake-screen {
+            animation: screen-shake 0.1s ease-in-out 0s 3 alternate; /* 震動 3 次 */
+        }
+
+        @keyframes screen-shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            25% { transform: translate(-1px, 2px) rotate(-0.5deg); }
+            75% { transform: translate(1px, -2px) rotate(0.5deg); }
+            100% { transform: translate(0px, 0px) rotate(0deg); }
         }
 
         .container {
@@ -26,15 +39,25 @@
             box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
             position: relative;
             z-index: 10;
+            transition: transform 1.5s ease-in-out; /* 用於旋轉效果 */
+        }
+        
+        /* 答對時的遊戲板旋轉效果 */
+        .rotate-win {
+            animation: rotate-board 1.5s ease-in-out forwards;
+        }
+
+        @keyframes rotate-board {
+            0% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(360deg) scale(1.05); } 
+            100% { transform: rotate(0deg) scale(1); }
         }
 
         h1 {
             color: #333;
         }
 
-        /* ---------------------------------------------------- */
-        /* --- 數獨網格及邊線修正：確保 9宮格邊線加粗且整齊 --- */
-        /* ---------------------------------------------------- */
+        /* --- 數獨網格邊線修正：確保 9宮格邊線加粗且整齊 --- */
         .grid {
             display: grid;
             grid-template-columns: repeat(9, 1fr);
@@ -71,17 +94,16 @@
         }
 
         /* 加粗 9宮格水平分隔線 (第 3, 6, 9 行的底部) */
-        .cell:nth-child(n+19):nth-child(-n+27),
-        .cell:nth-child(n+46):nth-child(-n+54),
-        .cell:nth-child(n+73):nth-child(-n+81) {
+        .cell:nth-child(n+19):nth-child(-n+27), /* 第三行 */
+        .cell:nth-child(n+46):nth-child(-n+54), /* 第六行 */
+        .cell:nth-child(n+73):nth-child(-n+81) { /* 第九行 */
             border-bottom-width: 3px;
             border-bottom-color: #333;
         }
-        /* 修正底部的粗線，確保最後一行單元格的底線是 3px 粗 */
+        /* 修正底線，確保最後一行邊線是 3px 粗 */
         .grid > div:nth-child(n+73):nth-child(-n+81) {
              border-bottom-width: 3px;
         }
-        
 
         .cell.fixed {
             background-color: #eee;
@@ -94,24 +116,7 @@
             color: #cc0000 !important; 
         }
 
-        /* --- 控制按鈕樣式 --- */
-        .controls button {
-            padding: 10px 20px;
-            margin: 10px 10px;
-            font-size: 16px;
-            cursor: pointer;
-            border: 1px solid #007bff;
-            background-color: #007bff;
-            color: white;
-            border-radius: 4px;
-            transition: background-color 0.3s;
-        }
-        #message {
-            font-weight: bold;
-            margin-top: 10px;
-        }
-
-        /* --- 聖誕老人和禮物動畫 CSS --- */
+        /* --- 聖誕老人和禮物動畫 CSS (與前版相同) --- */
         .celebration-overlay {
             position: fixed;
             top: 0;
@@ -123,7 +128,7 @@
             overflow: hidden;
             display: none; 
         }
-
+        /* ... santa-sleigh, fly-across, gift, drop-gift CSS ... (簡略以節省篇幅，但程式碼中會包含) ... */
         .santa-sleigh {
             position: absolute;
             top: 50px;
@@ -134,46 +139,34 @@
             transition: transform 15s linear;
             animation: fly-across 15s linear forwards;
         }
-
         @keyframes fly-across {
-            0% {
-                transform: translateX(0);
-            }
-            100% {
-                transform: translateX(calc(100vw + 300px)); 
-            }
+            0% { transform: translateX(0); }
+            100% { transform: translateX(calc(100vw + 300px)); }
         }
-        
         .gift {
-            position: absolute;
-            width: 30px;
-            height: 30px;
-            background-color: #008000;
-            border: 2px solid #cc0000;
-            border-radius: 5px;
-            transform: rotate(45deg); 
-            opacity: 0;
-            pointer-events: none;
-            z-index: 101;
+            position: absolute; width: 30px; height: 30px; background-color: #008000; border: 2px solid #cc0000; border-radius: 5px;
+            transform: rotate(45deg); opacity: 0; pointer-events: none; z-index: 101;
+        }
+        .gift.dropping { animation: drop-gift 3s ease-in forwards; }
+        @keyframes drop-gift {
+            0% { top: 80px; opacity: 1; transform: rotate(45deg) scale(1); }
+            100% { top: 95vh; opacity: 0; transform: rotate(225deg) scale(0.5); }
         }
         
-        .gift.dropping {
-            animation: drop-gift 3s ease-in forwards;
+        /* --- 流血疊層 CSS --- */
+        #blood-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 0, 0, 0.2); 
+            pointer-events: none;
+            z-index: 150; 
+            opacity: 0;
+            transition: opacity 0.1s ease-in-out; 
         }
 
-        @keyframes drop-gift {
-            0% {
-                top: 80px;
-                opacity: 1;
-                transform: rotate(45deg) scale(1);
-            }
-            100% {
-                top: 95vh;
-                opacity: 0;
-                transform: rotate(225deg) scale(0.5);
-            }
-        }
-        
         /* --- 自動求解嘲諷訊息樣式 --- */
         .taunt-overlay {
             position: fixed;
@@ -191,7 +184,6 @@
             pointer-events: none;
             transition: opacity 0.3s ease-in-out;
         }
-
         .taunt-message {
             font-size: 10vw; 
             font-weight: 900;
@@ -199,7 +191,6 @@
             transform: scale(0.9);
             animation: taunt-pulse 0.5s ease-in-out; 
         }
-
         @keyframes taunt-pulse {
             0% { transform: scale(0.9); }
             50% { transform: scale(1.1); }
@@ -222,6 +213,8 @@
         <p id="message"></p>
     </div>
     
+    <div id="blood-overlay"></div>
+    
     <div class="celebration-overlay" id="celebration-overlay">
         <span class="santa-sleigh" id="santa-sleigh">🎅🏻</span>
     </div>
@@ -241,12 +234,14 @@
         const messageElement = document.getElementById('message');
         const celebrationOverlay = document.getElementById('celebration-overlay');
         const santaSleigh = document.getElementById('santa-sleigh');
-        const tauntOverlay = document.getElementById('taunt-overlay'); // 新增嘲諷元素引用
+        const tauntOverlay = document.getElementById('taunt-overlay'); 
+        const bloodOverlay = document.getElementById('blood-overlay'); // 新增流血疊層
+        const container = document.querySelector('.container'); // 獲取容器用於旋轉
 
         let currentGrid = []; 
         let initialGrid = []; 
 
-        // --- 數獨核心演算法 ---
+        // --- 數獨核心演算法 (isValid, shuffleArray, solveSudoku, generateSudoku 保持不變) ---
 
         function isValid(board, row, col, number) {
             for (let k = 0; k < GRID_SIZE; k++) {
@@ -320,8 +315,38 @@
             return puzzle;
         }
 
-        // --- 慶祝動畫函式 ---
+        // --- 視覺特效函式 ---
 
+        /**
+         * 顯示嘲諷訊息並在 2 秒後隱藏
+         */
+        function showTauntMessage() {
+            tauntOverlay.style.pointerEvents = 'auto'; 
+            tauntOverlay.style.opacity = 1;
+
+            setTimeout(() => {
+                tauntOverlay.style.opacity = 0;
+                tauntOverlay.style.pointerEvents = 'none';
+            }, 2000); 
+        }
+
+        /**
+         * 觸發流血閃爍和螢幕震動
+         */
+        function triggerBloodEffect() {
+            // 螢幕震動
+            document.body.classList.add('shake-screen');
+            setTimeout(() => {
+                document.body.classList.remove('shake-screen');
+            }, 500); 
+
+            // 紅色閃爍
+            bloodOverlay.style.opacity = 0.5;
+            setTimeout(() => {
+                bloodOverlay.style.opacity = 0;
+            }, 100); 
+        }
+        
         function triggerFireworks() {
             const duration = 5 * 1000;
             const animationEnd = Date.now() + duration;
@@ -337,17 +362,19 @@
             }, 250);
         }
         
+        /**
+         * 顯示聖誕老人和丟禮物動畫 (丟 10 次)
+         */
         function showSanta() {
             celebrationOverlay.style.display = 'block';
             
-            // 重啟飛行動畫
             santaSleigh.style.animation = 'none';
-            void santaSleigh.offsetWidth;
+            void santaSleigh.offsetWidth; 
             santaSleigh.style.animation = 'fly-across 15s linear forwards';
             
             let dropCount = 0;
             const giftInterval = setInterval(() => {
-                if (dropCount >= 10) { 
+                if (dropCount >= 10) { // <-- 丟 10 個禮物
                     clearInterval(giftInterval);
                     setTimeout(() => {
                         celebrationOverlay.style.display = 'none';
@@ -358,7 +385,6 @@
                 const gift = document.createElement('div');
                 gift.classList.add('gift');
                 
-                // 計算禮物在當前聖誕老人位置的 x 坐標
                 const santaRect = santaSleigh.getBoundingClientRect();
                 const currentSantaX = santaRect.left + (santaRect.width / 2);
                 
@@ -375,18 +401,6 @@
             }, 800);
         }
 
-        /**
-         * 顯示嘲諷訊息並在 2 秒後隱藏
-         */
-        function showTauntMessage() {
-            tauntOverlay.style.pointerEvents = 'auto'; 
-            tauntOverlay.style.opacity = 1;
-
-            setTimeout(() => {
-                tauntOverlay.style.opacity = 0;
-                tauntOverlay.style.pointerEvents = 'none';
-            }, 2000); // 2 秒後自動隱藏
-        }
 
         // --- 遊戲狀態與渲染 ---
 
@@ -442,18 +456,31 @@
                 cell.textContent = ''; 
                 currentGrid[row][col] = 0;
             } else {
-                cell.textContent = value; 
                 currentGrid[row][col] = parseInt(value);
+            }
+            
+            // 1. 錯誤檢查與懲罰
+            const isConflict = !isUserMoveValid(currentGrid, row, col, currentGrid[row][col]) && currentGrid[row][col] !== 0;
+
+            if (isConflict) {
+                triggerBloodEffect(); // 答錯流血
             }
             
             renderGrid(currentGrid, true); 
             
+            // 2. 檢查遊戲是否完成與獎勵
             if (checkIfSolved()) {
-                updateMessage('🎉 恭喜！數獨已解開！煙火和禮物送給你！', 'green');
-                // --- 觸發動畫 ---
+                updateMessage('🎉 恭喜！數獨已解開！煙火、禮物和旋轉送給你！', 'green');
+                
+                container.classList.add('rotate-win'); // 答對旋轉
+                
                 triggerFireworks();
                 showSanta();
-                // ----------------
+                
+                setTimeout(() => {
+                     container.classList.remove('rotate-win');
+                }, 2000); // 旋轉 2 秒後停止
+                
             } else {
                 if (!cell.classList.contains('error')) {
                      updateMessage('');
@@ -480,7 +507,8 @@
         function initGame() {
             messageElement.textContent = '';
             celebrationOverlay.style.display = 'none'; 
-            tauntOverlay.style.opacity = 0; // 確保嘲諷訊息隱藏
+            tauntOverlay.style.opacity = 0; 
+            container.classList.remove('rotate-win'); // 確保開始新遊戲時不旋轉
             
             initialGrid = generateSudoku();
             currentGrid = initialGrid.map(row => [...row]); 
@@ -494,6 +522,8 @@
             showTauntMessage(); 
              
             celebrationOverlay.style.display = 'none';
+            container.classList.remove('rotate-win');
+            
             let boardToSolve = initialGrid.map(row => [...row]); 
             
             if (solveSudoku(boardToSolve)) {
