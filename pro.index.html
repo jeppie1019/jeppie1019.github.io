@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>隨機數獨遊戲</title>
+    <style>
+        /* --- CSS 樣式 --- */
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f4f4f4;
+            margin: 0;
+        }
+
+        .container {
+            text-align: center;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            grid-template-rows: repeat(9, 1fr);
+            width: 450px; 
+            height: 450px; 
+            border: 3px solid #333;
+            margin: 20px auto;
+        }
+
+        .cell {
+            width: 50px;
+            height: 50px;
+            border: 1px solid #ccc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+            font-weight: bold;
+            box-sizing: border-box; 
+            cursor: pointer;
+            background-color: #fff;
+            user-select: none; 
+            outline: none;
+        }
+
+        .cell.fixed {
+            background-color: #eee;
+            color: #333;
+            cursor: default;
+        }
+
+        .cell.editable {
+            color: #007bff; 
+        }
+        
+        .cell:focus {
+            background-color: #ffffcc; 
+        }
+        
+        .cell.error {
+            background-color: #ffdddd; 
+            color: #cc0000 !important; 
+        }
+
+        /* 粗線分隔 3x3 宮格 */
+        .cell:nth-child(3n) { border-right: 3px solid #333; }
+        .cell:nth-child(9n + 1) { border-left: none; }
+        .cell:nth-child(9n):not(:nth-child(81)) { border-right: none; }
+        .cell:nth-child(27n) ~ .cell { border-top: 3px solid #333; }
+        
+        .cell:nth-child(1), .cell:nth-child(2), .cell:nth-child(3),
+        .cell:nth-child(10), .cell:nth-child(11), .cell:nth-child(12),
+        .cell:nth-child(19), .cell:nth-child(20), .cell:nth-child(21) { border-top: none; }
+        .cell:nth-child(27n) { border-bottom: 3px solid #333; }
+        .grid .cell:nth-last-child(-n+9) { border-bottom: none !important; }
+
+        .controls button {
+            padding: 10px 20px;
+            margin: 10px 10px;
+            font-size: 16px;
+            cursor: pointer;
+            border: 1px solid #007bff;
+            background-color: #007bff;
+            color: white;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+
+        .controls button:hover {
+            background-color: #0056b3;
+        }
+        
+        #message {
+            font-weight: bold;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>數獨遊戲</h1>
+        
+        <div id="sudoku-grid" class="grid">
+            </div>
+
+        <div class="controls">
+            <button id="solve-button">自動求解</button>
+            <button id="new-game-button">新遊戲</button>
+        </div>
+        
+        <p id="message"></p>
+    </div>
+
+    <script>
+        /* --- JavaScript 核心邏輯 --- */
+        const GRID_SIZE = 9;
+        const gridElement = document.getElementById('sudoku-grid');
+        const solveButton = document.getElementById('solve-button');
+        const newGameButton = document.getElementById('new-game-button');
+        const messageElement = document.getElementById('message
