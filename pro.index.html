@@ -82,4 +82,406 @@
         }
         .grid > div:nth-child(28), .grid > div:nth-child(37), .grid > div:nth-child(46) {
              /* 確保第 4, 7 行的單元格頂部粗線不會被上一個選擇器影響 */
-            border-top:
+            border-top: 3px solid #333;
+        }
+
+
+        .cell.fixed {
+            background-color: #eee;
+            color: #333;
+            cursor: default;
+        }
+        
+        .cell.error {
+            background-color: #ffdddd; 
+            color: #cc0000 !important; 
+        }
+
+        /* --- 控制按鈕樣式 (與前版相同) --- */
+        .controls button {
+            padding: 10px 20px;
+            margin: 10px 10px;
+            font-size: 16px;
+            cursor: pointer;
+            border: 1px solid #007bff;
+            background-color: #007bff;
+            color: white;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        #message {
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        /* ---------------------------------------------------- */
+        /* --- 聖誕老人和禮物動畫 CSS --- */
+        /* ---------------------------------------------------- */
+        .celebration-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* 讓點擊事件穿透 */
+            z-index: 100; /* 確保在最上層 */
+            overflow: hidden;
+            display: none; /* 預設隱藏 */
+        }
+
+        /* 聖誕老人雪橇 (使用簡單文字和 CSS) */
+        .santa-sleigh {
+            position: absolute;
+            top: 50px;
+            left: -300px; /* 從左側外面開始 */
+            font-size: 80px;
+            color: #cc0000;
+            text-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+            transition: transform 15s linear;
+            animation: fly-across 15s linear forwards;
+        }
+
+        @keyframes fly-across {
+            0% {
+                transform: translateX(0);
+            }
+            100% {
+                transform: translateX(calc(100vw + 300px)); /* 飛出右側 */
+            }
+        }
+        
+        /* 禮物丟落動畫 */
+        .gift {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background-color: #008000;
+            border: 2px solid #cc0000;
+            border-radius: 5px;
+            transform: rotate(45deg); /* 菱形禮物 */
+            opacity: 0;
+            pointer-events: none;
+            z-index: 101;
+        }
+        
+        .gift.dropping {
+            animation: drop-gift 3s ease-in forwards;
+        }
+
+        @keyframes drop-gift {
+            0% {
+                top: 80px;
+                opacity: 1;
+                transform: rotate(45deg) scale(1);
+            }
+            100% {
+                top: 95vh;
+                opacity: 0;
+                transform: rotate(225deg) scale(0.5);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>城市版數獨</h1>
+        
+        <div id="sudoku-grid" class="grid">
+            </div>
+
+        <div class="controls">
+            <button id="solve-button">自動求解</button>
+            <button id="new-game-button">新遊戲</button>
+        </div>
+        
+        <p id="message"></p>
+    </div>
+    
+    <div class="celebration-overlay" id="celebration-overlay">
+        <span class="santa-sleigh" id="santa-sleigh">🎅🏻</span>
+    </div>
+
+    <script>
+        /* --- JavaScript 核心邏輯 --- */
+        const GRID_SIZE = 9;
+        const gridElement = document.getElementById('sudoku-grid');
+        const solveButton = document.getElementById('solve-button');
+        const newGameButton = document.getElementById('new-game-button');
+        const messageElement = document.getElementById('message');
+        const celebrationOverlay = document.getElementById('celebration-overlay');
+        const santaSleigh = document.getElementById('santa-sleigh');
+
+        let currentGrid = []; 
+        let initialGrid = []; 
+
+        // --- 核心演算法：檢查、求解與隨機生成 (與前版相同) ---
+
+        function isValid(board, row, col, number) {
+            for (let k = 0; k < GRID_SIZE; k++) {
+                if (board[row][k] === number || board[k][col] === number) return false;
+            }
+            const boxRowStart = row - (row % 3);
+            const boxColStart = col - (col % 3);
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    if (board[boxRowStart + i][boxColStart + j] === number) return false;
+                }
+            }
+            return true;
+        }
+        
+        function isUserMoveValid(board, row, col, number) {
+            let temp = board[row][col];
+            board[row][col] = 0; 
+            const valid = isValid(board, row, col, number);
+            board[row][col] = temp; 
+            return valid;
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function solveSudoku(board) {
+            for (let i = 0; i < GRID_SIZE; i++) {
+                for (let j = 0; j < GRID_SIZE; j++) {
+                    if (board[i][j] === 0) {
+                        const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+                        shuffleArray(numbers); 
+
+                        for (const number of numbers) {
+                            if (isValid(board, i, j, number)) {
+                                board[i][j] = number;
+                                if (solveSudoku(board)) return true;
+                                board[i][j] = 0; 
+                            }
+                        }
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+        
+        function createEmptyBoard() {
+            return Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(0));
+        }
+
+        function generateSudoku() {
+            let board = createEmptyBoard();
+            if (!solveSudoku(board)) return createEmptyBoard();
+            
+            let puzzle = board; 
+            let holes = 45; 
+            let count = 0;
+            while (count < holes) {
+                let r = Math.floor(Math.random() * 9);
+                let c = Math.floor(Math.random() * 9);
+                if (puzzle[r][c] !== 0) {
+                    puzzle[r][c] = 0;
+                    count++;
+                }
+            }
+            return puzzle;
+        }
+
+        // --- 慶祝動畫函式 ---
+
+        /**
+         * 觸發煙火效果 (使用 canvas-confetti 函式庫)
+         */
+        function triggerFireworks() {
+            const duration = 5 * 1000;
+            const animationEnd = Date.now() + duration;
+            const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 1000 };
+
+            function randomInRange(min, max) {
+                return Math.random() * (max - min) + min;
+            }
+
+            const interval = setInterval(function() {
+                const timeLeft = animationEnd - Date.now();
+
+                if (timeLeft <= 0) {
+                    return clearInterval(interval);
+                }
+
+                const particleCount = 50 * (timeLeft / duration);
+
+                // 左右兩側噴射
+                confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
+                confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
+            }, 250);
+        }
+        
+        /**
+         * 顯示聖誕老人和丟禮物動畫
+         */
+        function showSanta() {
+            celebrationOverlay.style.display = 'block';
+            
+            // 重啟飛行動畫
+            santaSleigh.style.animation = 'none';
+            void santaSleigh.offsetWidth; // 強制重繪
+            santaSleigh.style.animation = 'fly-across 15s linear forwards';
+            
+            // 丟禮物的間隔
+            let dropCount = 0;
+            const giftInterval = setInterval(() => {
+                if (dropCount >= 10) { // 丟 10 個禮物
+                    clearInterval(giftInterval);
+                    setTimeout(() => {
+                         // 延遲隱藏，等待聖誕老人飛走
+                        celebrationOverlay.style.display = 'none';
+                    }, 5000); 
+                    return;
+                }
+                
+                // 創建禮物元素
+                const gift = document.createElement('div');
+                gift.classList.add('gift');
+                
+                // 計算禮物在當前聖誕老人位置的 x 坐標
+                const santaRect = santaSleigh.getBoundingClientRect();
+                const currentSantaX = santaRect.left + (santaRect.width / 2);
+                
+                gift.style.left = `${currentSantaX}px`;
+                
+                celebrationOverlay.appendChild(gift);
+                
+                // 觸發丟落動畫
+                setTimeout(() => {
+                    gift.classList.add('dropping');
+                    // 丟完後移除禮物
+                    setTimeout(() => gift.remove(), 3000); 
+                }, 50); 
+                
+                dropCount++;
+            }, 800);
+        }
+
+        // --- 遊戲狀態與渲染 (部分與前版相同) ---
+
+        function renderGrid(board, highlightErrors = false) {
+            gridElement.innerHTML = ''; 
+
+            for (let i = 0; i < GRID_SIZE; i++) {
+                for (let j = 0; j < GRID_SIZE; j++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    cell.dataset.row = i;
+                    cell.dataset.col = j;
+                    
+                    const value = board[i][j];
+                    
+                    if (initialGrid[i][j] !== 0) {
+                        cell.textContent = value;
+                        cell.classList.add('fixed');
+                    } else {
+                        if (value !== 0) {
+                            cell.textContent = value;
+                            cell.classList.add('editable');
+                            if (highlightErrors && !isUserMoveValid(board, i, j, value)) {
+                                cell.classList.add('error');
+                                cell.setAttribute('title', '這個數字與行、列或宮格內的數字衝突');
+                            }
+                        }
+                        
+                        cell.contentEditable = 'true'; 
+                        cell.setAttribute('inputmode', 'numeric');
+                        cell.addEventListener('input', handleCellInput);
+                        cell.addEventListener('keydown', restrictInput);
+                    }
+                    gridElement.appendChild(cell);
+                }
+            }
+        }
+
+        function restrictInput(event) {
+            const key = event.key;
+            if (['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Tab'].includes(key)) return; 
+            if (!/^[1-9]$/.test(key)) event.preventDefault();
+            if (event.target.textContent.length >= 1 && !['Backspace', 'Delete'].includes(key)) event.preventDefault();
+        }
+
+        function handleCellInput(event) {
+            const cell = event.target;
+            let value = cell.textContent.trim();
+            const row = parseInt(cell.dataset.row);
+            const col = parseInt(cell.dataset.col);
+
+            if (!/^[1-9]$/.test(value)) {
+                cell.textContent = ''; 
+                currentGrid[row][col] = 0;
+            } else {
+                cell.textContent = value; 
+                currentGrid[row][col] = parseInt(value);
+            }
+            
+            renderGrid(currentGrid, true); 
+            
+            if (checkIfSolved()) {
+                updateMessage('🎉 恭喜！數獨已解開！煙火和禮物送給你！', 'green');
+                // --- 觸發動畫 ---
+                triggerFireworks();
+                showSanta();
+                // ----------------
+            } else {
+                if (!cell.classList.contains('error')) {
+                     updateMessage('');
+                }
+            }
+        }
+
+        function checkIfSolved() {
+            for(let i=0; i<GRID_SIZE; i++) {
+                for(let j=0; j<GRID_SIZE; j++) {
+                    if (currentGrid[i][j] === 0) return false; 
+                    let number = currentGrid[i][j];
+                    if (!isUserMoveValid(currentGrid, i, j, number)) return false; 
+                }
+            }
+            return true;
+        }
+
+        function updateMessage(text, color = 'red') {
+            messageElement.textContent = text;
+            messageElement.style.color = color;
+        }
+
+        function initGame() {
+            messageElement.textContent = '';
+            celebrationOverlay.style.display = 'none'; // 隱藏動畫
+            
+            initialGrid = generateSudoku();
+            currentGrid = initialGrid.map(row => [...row]); 
+            
+            renderGrid(currentGrid);
+        }
+
+        // --- 事件監聽器 ---
+        solveButton.addEventListener('click', () => {
+             // 確保自動求解時動畫不會啟動
+            celebrationOverlay.style.display = 'none';
+            let boardToSolve = initialGrid.map(row => [...row]); 
+            
+            if (solveSudoku(boardToSolve)) {
+                currentGrid = boardToSolve; 
+                renderGrid(currentGrid, false); 
+                updateMessage('✅ 數獨已自動求解完畢！', 'blue');
+            } else {
+                updateMessage('❌ 錯誤：該數獨無解。');
+            }
+        });
+
+        newGameButton.addEventListener('click', initGame);
+
+
+        // --- 啟動遊戲 ---
+        document.addEventListener('DOMContentLoaded', initGame);
+    </script>
+</body>
+</html>
