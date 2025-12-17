@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>隨機數獨遊戲</title>
+    <title>城市版數獨遊戲</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.js"></script>
     <style>
         /* --- CSS 樣式 --- */
         body {
@@ -14,6 +15,7 @@
             min-height: 100vh;
             background-color: #f4f4f4;
             margin: 0;
+            overflow: hidden; /* 防止動畫超出視窗導致捲軸 */
         }
 
         .container {
@@ -22,26 +24,34 @@
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            position: relative;
+            z-index: 10;
         }
 
         h1 {
             color: #333;
         }
 
+        /* ---------------------------------------------------- */
+        /* --- 數獨網格及邊線修正：確保 9宮格邊線加粗且整齊 --- */
+        /* ---------------------------------------------------- */
         .grid {
             display: grid;
             grid-template-columns: repeat(9, 1fr);
             grid-template-rows: repeat(9, 1fr);
             width: 450px; 
             height: 450px; 
-            border: 3px solid #333;
+            border-top: 3px solid #333; /* 頂部邊界 */
+            border-left: 3px solid #333; /* 左側邊界 */
             margin: 20px auto;
+            box-sizing: content-box; /* 確保總寬度為 450px + 6px 邊界 */
         }
 
         .cell {
             width: 50px;
             height: 50px;
-            border: 1px solid #ccc;
+            border-right: 1px solid #ccc;
+            border-bottom: 1px solid #ccc;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -53,350 +63,23 @@
             user-select: none; 
             outline: none;
         }
-
-        .cell.fixed {
-            background-color: #eee;
-            color: #333;
-            cursor: default;
+        
+        /* 加粗 9宮格垂直分隔線 (第 3, 6, 9 列) */
+        .cell:nth-child(3n) {
+            border-right-width: 3px;
+            border-right-color: #333;
         }
 
-        .cell.editable {
-            color: #007bff; 
+        /* 加粗 9宮格水平分隔線 (第 3, 6, 9 行的底部) */
+        .grid > div:nth-child(27n) ~ div.cell {
+            border-top: 3px solid #333;
         }
         
-        .cell:focus {
-            background-color: #ffffcc; 
+        /* 讓第 28 到 36 個單元格具備 3x3 頂部粗線 */
+        .grid > div:nth-child(28), .grid > div:nth-child(37), .grid > div:nth-child(46), 
+        .grid > div:nth-child(55), .grid > div:nth-child(64), .grid > div:nth-child(73) {
+            border-top: none; /* 重設被上一個選擇器影響的單元格 */
         }
-        
-        .cell.error {
-            background-color: #ffdddd; 
-            color: #cc0000 !important; 
-        }
-
-        /* 粗線分隔 3x3 宮格 */
-        .cell:nth-child(3n) { border-right: 3px solid #333; }
-        .cell:nth-child(9n + 1) { border-left: none; }
-        .cell:nth-child(9n):not(:nth-child(81)) { border-right: none; }
-        .cell:nth-child(27n) ~ .cell { border-top: 3px solid #333; }
-        
-        .cell:nth-child(1), .cell:nth-child(2), .cell:nth-child(3),
-        .cell:nth-child(10), .cell:nth-child(11), .cell:nth-child(12),
-        .cell:nth-child(19), .cell:nth-child(20), .cell:nth-child(21) { border-top: none; }
-        .cell:nth-child(27n) { border-bottom: 3px solid #333; }
-        .grid .cell:nth-last-child(-n+9) { border-bottom: none !important; }
-
-        .controls button {
-            padding: 10px 20px;
-            margin: 10px 10px;
-            font-size: 16px;
-            cursor: pointer;
-            border: 1px solid #007bff;
-            background-color: #007bff;
-            color: white;
-            border-radius: 4px;
-            transition: background-color 0.3s;
-        }
-
-        .controls button:hover {
-            background-color: #0056b3;
-        }
-        
-        #message {
-            font-weight: bold;
-            margin-top: 10px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>數獨遊戲</h1>
-        
-        <div id="sudoku-grid" class="grid">
-            </div>
-
-        <div class="controls">
-            <button id="solve-button">自動求解</button>
-            <button id="new-game-button">新遊戲</button>
-        </div>
-        
-        <p id="message"></p>
-    </div>
-
-    <script>
-        /* --- JavaScript 核心邏輯 --- */
-        const GRID_SIZE = 9;
-        const gridElement = document.getElementById('sudoku-grid');
-        const solveButton = document.getElementById('solve-button');
-        const newGameButton = document.getElementById('new-game-button');
-        const messageElement = document.getElementById('message');
-
-        let currentGrid = []; 
-        let initialGrid = []; 
-
-        // --- 核心演算法：回溯法檢查與求解 ---
-
-        /**
-         * 檢查在給定位置 (row, col) 放置 number 是否有效。
-         */
-        function isValid(board, row, col, number) {
-            // 檢查行和列
-            for (let k = 0; k < GRID_SIZE; k++) {
-                if (board[row][k] === number || board[k][col] === number) {
-                    return false;
-                }
-            }
-
-            // 檢查 3x3 宮格
-            const boxRowStart = row - (row % 3);
-            const boxColStart = col - (col % 3);
-            for (let i = 0; i < 3; i++) {
-                for (let j = 0; j < 3; j++) {
-                    if (board[boxRowStart + i][boxColStart + j] === number) {
-                        return false;
-                    }
-                }
-            }
-            return true;
-        }
-        
-        /**
-         * 檢查當前用戶輸入的數字是否與數獨規則衝突
-         */
-        function isUserMoveValid(board, row, col, number) {
-            // 暫時將當前位置設為 0，避免檢查到自身
-            let temp = board[row][col];
-            board[row][col] = 0; 
-            const valid = isValid(board, row, col, number);
-            board[row][col] = temp; // 恢復數字
-            return valid;
-        }
-
-        /**
-         * Fisher-Yates 洗牌演算法 (用於打亂陣列)
-         */
-        function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-        }
-
-        /**
-         * 實現隨機順序的回溯法求解（用於生成不同的解）
-         * 
-         */
-        function solveSudoku(board) {
-            for (let i = 0; i < GRID_SIZE; i++) {
-                for (let j = 0; j < GRID_SIZE; j++) {
-                    if (board[i][j] === 0) {
-                        
-                        // 使用隨機順序嘗試 1-9
-                        const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-                        shuffleArray(numbers); 
-
-                        for (const number of numbers) {
-                            if (isValid(board, i, j, number)) {
-                                board[i][j] = number;
-                                if (solveSudoku(board)) {
-                                    return true;
-                                }
-                                board[i][j] = 0; // 回溯 (Backtrack)
-                            }
-                        }
-                        return false;
-                    }
-                }
-            }
-            return true;
-        }
-        
-        // --- 遊戲生成與渲染 ---
-
-        /**
-         * 創建一個空的 9x9 數獨板 (用 0 填充)
-         */
-        function createEmptyBoard() {
-            return Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(0));
-        }
-
-        /**
-         * 隨機生成一個有效的數獨謎題
-         */
-        function generateSudoku() {
-            let board = createEmptyBoard();
-            
-            // 1. 生成一個隨機的完整數獨解
-            if (!solveSudoku(board)) {
-                console.error("無法生成數獨完整解！");
-                return createEmptyBoard();
-            }
-            
-            let puzzle = board; 
-            
-            // 2. 隨機挖洞 (難度設置)
-            // 數值越大，空位越多，難度越高
-            let holes = 45; 
-            let count = 0;
-            while (count < holes) {
-                let r = Math.floor(Math.random() * 9);
-                let c = Math.floor(Math.random() * 9);
-                if (puzzle[r][c] !== 0) {
-                    puzzle[r][c] = 0;
-                    count++;
-                }
-            }
-            
-            return puzzle;
-        }
-
-
-        /**
-         * 渲染數獨遊戲板到 HTML 
-         */
-        function renderGrid(board, highlightErrors = false) {
-            gridElement.innerHTML = ''; 
-
-            for (let i = 0; i < GRID_SIZE; i++) {
-                for (let j = 0; j < GRID_SIZE; j++) {
-                    const cell = document.createElement('div');
-                    cell.classList.add('cell');
-                    cell.dataset.row = i;
-                    cell.dataset.col = j;
-                    
-                    const value = board[i][j];
-                    
-                    if (initialGrid[i][j] !== 0) {
-                        cell.textContent = value;
-                        cell.classList.add('fixed');
-                    } else {
-                        if (value !== 0) {
-                            cell.textContent = value;
-                            cell.classList.add('editable');
-                            
-                            // 如果需要高亮顯示錯誤，則檢查
-                            if (highlightErrors && !isUserMoveValid(board, i, j, value)) {
-                                cell.classList.add('error');
-                                cell.setAttribute('title', '這個數字與行、列或宮格內的數字衝突');
-                            }
-                        }
-                        
-                        cell.contentEditable = 'true'; 
-                        cell.setAttribute('inputmode', 'numeric');
-                        cell.addEventListener('input', handleCellInput);
-                        cell.addEventListener('keydown', restrictInput);
-                    }
-                    gridElement.appendChild(cell);
-                }
-            }
-        }
-
-        // --- 用戶輸入處理 ---
-
-        function restrictInput(event) {
-            const key = event.key;
-            // 允許控制鍵
-            if (['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Tab'].includes(key)) {
-                return; 
-            }
-            // 只允許 1-9 的數字鍵
-            if (!/^[1-9]$/.test(key)) {
-                event.preventDefault();
-            }
-            // 確保單元格內只保留一個字符
-            if (event.target.textContent.length >= 1 && !['Backspace', 'Delete'].includes(key)) {
-                event.preventDefault();
-            }
-        }
-
-
-        function handleCellInput(event) {
-            const cell = event.target;
-            let value = cell.textContent.trim();
-            const row = parseInt(cell.dataset.row);
-            const col = parseInt(cell.dataset.col);
-
-            // 清理和驗證輸入
-            if (!/^[1-9]$/.test(value)) {
-                cell.textContent = ''; 
-                currentGrid[row][col] = 0;
-            } else {
-                cell.textContent = value; 
-                currentGrid[row][col] = parseInt(value);
-            }
-            
-            // 重新渲染以檢查錯誤 (這是最簡單的錯誤高亮方式)
-            renderGrid(currentGrid, true); 
-            
-            // 檢查遊戲是否完成
-            if (checkIfSolved()) {
-                updateMessage('🎉 恭喜！數獨已解開！', 'green');
-            } else {
-                // 如果當前單元格沒有錯誤，且沒有其他完成訊息，則清空
-                if (!cell.classList.contains('error')) {
-                     updateMessage('');
-                }
-            }
-        }
-
-        function checkIfSolved() {
-            // 檢查是否有空位
-            for(let i=0; i<GRID_SIZE; i++) {
-                for(let j=0; j<GRID_SIZE; j++) {
-                    if (currentGrid[i][j] === 0) {
-                        return false; 
-                    }
-                }
-            }
-            
-            // 檢查是否有衝突
-            for(let i=0; i<GRID_SIZE; i++) {
-                for(let j=0; j<GRID_SIZE; j++) {
-                    let number = currentGrid[i][j];
-                    if (!isUserMoveValid(currentGrid, i, j, number)) {
-                        return false; 
-                    }
-                }
-            }
-            return true;
-        }
-
-        function updateMessage(text, color = 'red') {
-            messageElement.textContent = text;
-            messageElement.style.color = color;
-        }
-
-        /**
-         * 初始化遊戲
-         */
-        function initGame() {
-            messageElement.textContent = '';
-            
-            // 1. 生成新的隨機數獨謎題
-            initialGrid = generateSudoku();
-            currentGrid = initialGrid.map(row => [...row]); 
-            
-            // 2. 渲染遊戲板
-            renderGrid(currentGrid);
-        }
-
-        // --- 事件監聽器 ---
-        solveButton.addEventListener('click', () => {
-            let boardToSolve = initialGrid.map(row => [...row]); 
-            
-            if (solveSudoku(boardToSolve)) {
-                currentGrid = boardToSolve; 
-                renderGrid(currentGrid, false); 
-                updateMessage('✅ 數獨已自動求解完畢！', 'blue');
-            } else {
-                updateMessage('❌ 錯誤：該數獨無解。');
-            }
-        });
-
-        newGameButton.addEventListener('click', initGame);
-
-
-        // --- 啟動遊戲 ---
-        document.addEventListener('DOMContentLoaded', initGame);
-    </script>
-</body>
-</html>
+        .grid > div:nth-child(28), .grid > div:nth-child(37), .grid > div:nth-child(46) {
+             /* 確保第 4, 7 行的單元格頂部粗線不會被上一個選擇器影響 */
+            border-top:
