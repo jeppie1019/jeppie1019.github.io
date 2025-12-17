@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>數獨遊戲</title>
+    <title>可玩的數獨遊戲</title>
     <style>
         /* --- CSS 樣式 --- */
         body {
@@ -330,3 +330,75 @@
          * 檢查當前遊戲板是否完全解開且正確
          */
         function checkIfSolved() {
+            // 檢查是否有空位
+            for(let i=0; i<GRID_SIZE; i++) {
+                for(let j=0; j<GRID_SIZE; j++) {
+                    if (currentGrid[i][j] === 0) {
+                        return false; 
+                    }
+                }
+            }
+            
+            // 檢查是否有衝突 (如果 renderGrid 已經高亮衝突，這裡只需確保沒有衝突)
+            for(let i=0; i<GRID_SIZE; i++) {
+                for(let j=0; j<GRID_SIZE; j++) {
+                    let number = currentGrid[i][j];
+                    if (!isUserMoveValid(currentGrid, i, j, number)) {
+                        return false; 
+                    }
+                }
+            }
+            return true;
+        }
+
+        /**
+         * 顯示訊息
+         */
+        function updateMessage(text, color = 'red') {
+            messageElement.textContent = text;
+            messageElement.style.color = color;
+        }
+
+        /**
+         * 初始化遊戲
+         */
+        function initGame() {
+            messageElement.textContent = '';
+            
+            // 1. 生成新的數獨謎題
+            initialGrid = generateSudoku();
+            currentGrid = initialGrid.map(row => [...row]); 
+            
+            // 2. 渲染遊戲板
+            renderGrid(currentGrid);
+        }
+
+        // --- 事件監聽器 ---
+
+        /**
+         * 處理 "自動求解"
+         */
+        solveButton.addEventListener('click', () => {
+            // 複製初始謎題板進行求解
+            let boardToSolve = initialGrid.map(row => [...row]); 
+            
+            if (solveSudoku(boardToSolve)) {
+                currentGrid = boardToSolve; // 更新為完整解
+                renderGrid(currentGrid, false); // 渲染解，不檢查錯誤
+                updateMessage('✅ 數獨已自動求解完畢！', 'blue');
+            } else {
+                updateMessage('❌ 錯誤：該數獨無解。');
+            }
+        });
+
+        /**
+         * 處理 "新遊戲"
+         */
+        newGameButton.addEventListener('click', initGame);
+
+
+        // --- 啟動遊戲 ---
+        document.addEventListener('DOMContentLoaded', initGame);
+    </script>
+</body>
+</html>
