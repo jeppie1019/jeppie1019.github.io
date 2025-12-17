@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>城市版數獨遊戲 (終極動畫版)</title>
+    <title>城市版數獨遊戲 (終極彩蛋版)</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.js"></script>
     <style>
-        /* --- CSS 樣式 (大部分保持不變) --- */
+        /* --- CSS 樣式 (數獨和懲罰效果保持不變) --- */
         body {
             font-family: Arial, sans-serif;
             display: flex;
@@ -20,10 +20,7 @@
         }
         
         /* 答錯時，應用於 body 元素的震動動畫 */
-        .shake-screen {
-            animation: screen-shake 0.1s ease-in-out 0s 3 alternate; 
-        }
-
+        .shake-screen { animation: screen-shake 0.1s ease-in-out 0s 3 alternate; }
         @keyframes screen-shake {
             0% { transform: translate(1px, 1px) rotate(0deg); }
             25% { transform: translate(-1px, 2px) rotate(-0.5deg); }
@@ -32,21 +29,13 @@
         }
 
         .container {
-            text-align: center;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
-            position: relative;
-            z-index: 10;
+            text-align: center; background: white; padding: 20px; border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2); position: relative; z-index: 10;
             transition: transform 1.5s ease-in-out; 
         }
         
         /* 答對時的遊戲板旋轉效果 */
-        .rotate-win {
-            animation: rotate-board 1.5s ease-in-out forwards;
-        }
-
+        .rotate-win { animation: rotate-board 1.5s ease-in-out forwards; }
         @keyframes rotate-board {
             0% { transform: rotate(0deg) scale(1); }
             50% { transform: rotate(360deg) scale(1.05); } 
@@ -57,15 +46,9 @@
 
         /* --- 數獨網格邊線修正 (保持不變) --- */
         .grid {
-            display: grid;
-            grid-template-columns: repeat(9, 1fr);
-            grid-template-rows: repeat(9, 1fr);
-            width: 450px; 
-            height: 450px; 
-            border-top: 3px solid #333; 
-            border-left: 3px solid #333; 
-            margin: 20px auto;
-            box-sizing: content-box; 
+            display: grid; grid-template-columns: repeat(9, 1fr); grid-template-rows: repeat(9, 1fr);
+            width: 450px; height: 450px; border-top: 3px solid #333; border-left: 3px solid #333;
+            margin: 20px auto; box-sizing: content-box; 
         }
 
         .cell {
@@ -83,75 +66,62 @@
         .cell.fixed { background-color: #eee; color: #333; cursor: default; }
         .cell.error { background-color: #ffdddd; color: #cc0000 !important; }
 
-        /* --- 聖誕老人和禮物動畫 CSS (多個實例) --- */
+        /* --- 聖誕老人動畫 CSS --- */
         .celebration-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none; 
-            z-index: 100; 
-            overflow: hidden;
-            display: none; 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; overflow: hidden; display: none; 
         }
 
-        /* 聖誕老人載具的通用樣式 */
         .santa-sleigh {
-            position: absolute;
-            left: -300px; /* 從左側外面開始 */
-            font-size: 80px;
-            color: #cc0000;
-            text-shadow: 2px 2px 5px rgba(0,0,0,0.5);
-            transition: transform 15s linear;
+            position: absolute; left: -300px; font-size: 80px; color: #cc0000;
+            text-shadow: 2px 2px 5px rgba(0,0,0,0.5); transition: transform 15s linear;
         }
 
-        /* 禮物丟落動畫 */
-        .gift {
-            position: absolute;
-            width: 30px;
-            height: 30px;
-            background-color: #008000;
-            border: 2px solid #cc0000;
-            border-radius: 5px;
-            transform: rotate(45deg); 
-            opacity: 0;
-            pointer-events: none;
-            z-index: 101;
+        /* 禮物基類 - 沒有固定的背景色或邊框 */
+        .gift-item {
+            position: absolute; width: 30px; height: 30px; 
+            opacity: 0; pointer-events: none; z-index: 101;
         }
         
-        .gift.dropping {
+        /* 禮物 (方塊) 樣式 */
+        .gift {
+            border-radius: 5px; border: 2px solid; /* 顏色由 JS 決定 */
+            transform: rotate(45deg); 
+            width: 30px; height: 30px;
+        }
+        
+        /* 星星和月亮樣式 (使用 emoji) */
+        .star, .moon {
+            font-size: 40px; /* 讓它們看起來大一些 */
+            text-shadow: 0 0 5px rgba(255, 255, 0, 0.7);
+            width: auto; height: auto;
+            transform: rotate(0deg); /* 不旋轉 */
+        }
+
+        .dropping {
             animation: drop-gift 3s ease-in forwards;
         }
 
         @keyframes drop-gift {
-            0% { top: 80px; opacity: 1; transform: rotate(45deg) scale(1); }
-            100% { top: 95vh; opacity: 0; transform: rotate(225deg) scale(0.5); }
+            0% { top: 80px; opacity: 1; transform: scale(1) rotate(0deg); }
+            100% { top: 95vh; opacity: 0; transform: scale(0.5) rotate(360deg); }
         }
         
-        /* --- 流血疊層 CSS (保持不變) --- */
+        /* --- 流血疊層 CSS --- */
         #blood-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: rgba(255, 0, 0, 0.2); pointer-events: none; z-index: 150; 
             opacity: 0; transition: opacity 0.1s ease-in-out; 
         }
 
-        /* --- 自動求解嘲諷訊息樣式 (保持不變) --- */
+        /* --- 自動求解嘲諷訊息樣式 --- */
         .taunt-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: rgba(0, 0, 0, 0.9); color: #ff0000; display: flex;
             justify-content: center; align-items: center; z-index: 200; 
             opacity: 0; pointer-events: none; transition: opacity 0.3s ease-in-out;
         }
-        .taunt-message {
-            font-size: 10vw; font-weight: 900; text-shadow: 0 0 20px rgba(255, 0, 0, 0.8);
-            transform: scale(0.9); animation: taunt-pulse 0.5s ease-in-out; 
-        }
-        @keyframes taunt-pulse {
-            0% { transform: scale(0.9); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
+        .taunt-message { font-size: 10vw; font-weight: 900; text-shadow: 0 0 20px rgba(255, 0, 0, 0.8); animation: taunt-pulse 0.5s ease-in-out; }
+        @keyframes taunt-pulse { 0% { transform: scale(0.9); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
     </style>
 </head>
 <body>
@@ -183,8 +153,8 @@
     <script>
         /* --- JavaScript 核心邏輯 --- */
         const GRID_SIZE = 9;
-        const SANTA_COUNT = 10; // **設定 10 個聖誕老人**
-        const GIFT_PER_SANTA = 10; // 每個聖誕老人投擲的禮物數量
+        const SANTA_COUNT = 10; 
+        const GIFT_COLORS = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF', '#FFA500', '#800080']; // 多種顏色
 
         const gridElement = document.getElementById('sudoku-grid');
         const solveButton = document.getElementById('solve-button');
@@ -197,9 +167,9 @@
 
         let currentGrid = []; 
         let initialGrid = []; 
+        let santaAnimationRunning = false; // 用於控制禮物投擲是否繼續
 
-        // --- 數獨核心演算法 (isValid, shuffleArray, solveSudoku, generateSudoku 保持不變) ---
-
+        // --- 數獨核心演算法 (保持不變) ---
         function isValid(board, row, col, number) {
             for (let k = 0; k < GRID_SIZE; k++) {
                 if (board[row][k] === number || board[k][col] === number) return false;
@@ -221,7 +191,7 @@
             board[row][col] = temp; 
             return valid;
         }
-
+        
         function shuffleArray(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -311,122 +281,138 @@
             }, 250);
         }
 
-        /**
-         * 創建單個聖誕老人並設定其動畫
-         */
         function createSanta(index) {
             const santa = document.createElement('span');
             santa.classList.add('santa-sleigh');
             santa.textContent = '🎅🏻'; 
             
-            // 隨機 Y 軸位置 (在螢幕上半部)
             const randomY = Math.floor(Math.random() * (window.innerHeight / 3));
             santa.style.top = `${randomY}px`;
             
-            // 隨機動畫速度和延遲
-            const duration = Math.floor(Math.random() * 8) + 10; // 10s - 18s
-            const delay = Math.floor(Math.random() * 5) * 1000; // 0s - 4s 延遲開始
+            const duration = Math.floor(Math.random() * 8) + 10; 
+            const delay = Math.floor(Math.random() * 5) * 1000; 
             
-            santa.style.animation = `fly-across ${duration}s linear ${delay}ms forwards`;
-            
-            // 定義該聖誕老人的飛行動畫
+            // 使用動態 CSS 規則來實現每個聖誕老人獨立的動畫
             const styleSheet = document.styleSheets[0];
             const animationName = `fly-across-${index}`;
             
-            styleSheet.insertRule(`
-                @keyframes ${animationName} {
-                    0% { transform: translateX(0); }
-                    100% { transform: translateX(calc(100vw + 300px)); }
-                }
-            `, styleSheet.cssRules.length);
+            // 檢查規則是否已經存在，避免重複添加
+            if (!Array.from(styleSheet.cssRules).some(rule => rule.name === animationName)) {
+                styleSheet.insertRule(`
+                    @keyframes ${animationName} {
+                        0% { transform: translateX(0); }
+                        100% { transform: translateX(calc(100vw + 300px)); }
+                    }
+                `, styleSheet.cssRules.length);
+            }
             
-            santa.style.animationName = animationName;
+            santa.style.animation = `${animationName} ${duration}s linear ${delay}ms forwards`;
             
             celebrationOverlay.appendChild(santa);
             
             return santa;
         }
-
+        
         /**
-         * 顯示 10 個聖誕老人和撒禮物動畫
+         * 投擲禮物/星星/月亮
          */
-        function showSanta() {
-            celebrationOverlay.style.display = 'block';
-            celebrationOverlay.innerHTML = ''; // 清空舊的聖誕老人
+        function dropItem(santa) {
+            // 隨機選擇要丟的東西
+            const itemType = Math.floor(Math.random() * 3); // 0=禮物, 1=星星, 2=月亮
+            const item = document.createElement('span');
+            item.classList.add('gift-item');
             
-            let activeSantas = [];
-            
-            // 1. 創建並啟動 10 個聖誕老人
-            for (let i = 0; i < SANTA_COUNT; i++) {
-                activeSantas.push(createSanta(i));
+            // 設置內容和樣式
+            if (itemType === 0) {
+                item.classList.add('gift');
+                const color = GIFT_COLORS[Math.floor(Math.random() * GIFT_COLORS.length)];
+                item.style.backgroundColor = color;
+                item.style.borderColor = color === '#FF0000' ? '#00FF00' : '#FF0000'; // 紅白交叉邊緣
+            } else if (itemType === 1) {
+                item.classList.add('star');
+                item.textContent = '⭐';
+            } else {
+                item.classList.add('moon');
+                item.textContent = '🌙';
             }
-
-            // 2. 讓每個聖誕老人開始撒禮物
-            activeSantas.forEach((santa, index) => {
-                let dropCount = 0;
-                
-                // 每個聖誕老人有自己的禮物投擲間隔
-                const giftInterval = setInterval(() => {
-                    if (dropCount >= GIFT_PER_SANTA) { 
-                        clearInterval(giftInterval);
-                        return;
-                    }
-                    
-                    const gift = document.createElement('div');
-                    gift.classList.add('gift');
-                    
-                    // 獲取當前聖誕老人的精確位置
-                    const santaRect = santa.getBoundingClientRect();
-                    const currentSantaX = santaRect.left + (santaRect.width / 2);
-                    
-                    // 禮物從聖誕老人的位置開始掉落
-                    gift.style.left = `${currentSantaX}px`;
-                    gift.style.top = `${santaRect.top + 50}px`; // 從載具下方開始
-                    
-                    celebrationOverlay.appendChild(gift);
-                    
-                    setTimeout(() => {
-                        gift.classList.add('dropping');
-                        setTimeout(() => gift.remove(), 3000); 
-                    }, 50); 
-                    
-                    dropCount++;
-                }, 400 + index * 50); // 錯開每個聖誕老人的投擲頻率
-                
-                // 聖誕老人飛出螢幕後移除
-                santa.addEventListener('animationend', () => {
-                    santa.remove();
-                    // 當所有聖誕老人飛走後，隱藏疊層
-                    if (celebrationOverlay.children.length === 0) {
-                         celebrationOverlay.style.display = 'none';
-                    }
-                });
-            });
             
-             // 確保在所有動畫開始後，疊層才最終被隱藏
+            const santaRect = santa.getBoundingClientRect();
+            const currentSantaX = santaRect.left + (santaRect.width / 2);
+            
+            item.style.left = `${currentSantaX}px`;
+            item.style.top = `${santaRect.top + 50}px`; 
+            
+            celebrationOverlay.appendChild(item);
+            
+            // 觸發掉落動畫
             setTimeout(() => {
-                 // 這是備用方案，確保疊層最終關閉
-                if (celebrationOverlay.children.length > 0) {
-                     celebrationOverlay.style.display = 'none';
-                }
-            }, 18000); // 最長動畫時間 + 緩衝
+                item.classList.add('dropping');
+                setTimeout(() => item.remove(), 3000); 
+            }, 50); 
         }
 
 
-        // --- 遊戲狀態與渲染 ---
+        /**
+         * 顯示 10 個聖誕老人並持續撒禮物
+         */
+        function showSanta() {
+            celebrationOverlay.style.display = 'block';
+            celebrationOverlay.innerHTML = ''; 
+            santaAnimationRunning = true; // 設置運行狀態
+            
+            let activeSantas = [];
+            let intervals = [];
+
+            // 1. 創建並啟動 10 個聖誕老人
+            for (let i = 0; i < SANTA_COUNT; i++) {
+                const santa = createSanta(i);
+                activeSantas.push(santa);
+            }
+            
+            // 2. 啟動持續投擲邏輯
+            activeSantas.forEach((santa, index) => {
+                const dropFunction = () => {
+                    if (santaAnimationRunning && santa.parentElement === celebrationOverlay) {
+                        dropItem(santa);
+                    }
+                };
+                
+                // 每個聖誕老人以不同的頻率投擲
+                const interval = setInterval(dropFunction, 200 + index * 50); 
+                intervals.push(interval);
+
+                // 聖誕老人飛出螢幕後移除
+                santa.addEventListener('animationend', () => {
+                    santa.remove();
+                    // 當最後一個聖誕老人飛走時，停止所有投擲並清理
+                    if (celebrationOverlay.children.length === 0) {
+                        intervals.forEach(clearInterval);
+                        santaAnimationRunning = false;
+                        celebrationOverlay.style.display = 'none';
+                    }
+                });
+            });
+
+            // 設置一個總體計時器，確保在最長時間後停止所有動畫（安全機制）
+            setTimeout(() => {
+                intervals.forEach(clearInterval);
+                santaAnimationRunning = false;
+                celebrationOverlay.style.display = 'none';
+            }, 20000); // 20 秒後無論如何停止
+        }
+
+
+        // --- 遊戲狀態與渲染 (保持不變) ---
 
         function renderGrid(board, highlightErrors = false) {
             gridElement.innerHTML = ''; 
-
             for (let i = 0; i < GRID_SIZE; i++) {
                 for (let j = 0; j < GRID_SIZE; j++) {
                     const cell = document.createElement('div');
                     cell.classList.add('cell');
                     cell.dataset.row = i;
                     cell.dataset.col = j;
-                    
                     const value = board[i][j];
-                    
                     if (initialGrid[i][j] !== 0) {
                         cell.textContent = value;
                         cell.classList.add('fixed');
@@ -439,7 +425,6 @@
                                 cell.setAttribute('title', '這個數字與行、列或宮格內的數字衝突');
                             }
                         }
-                        
                         cell.contentEditable = 'true'; 
                         cell.setAttribute('inputmode', 'numeric');
                         cell.addEventListener('input', handleCellInput);
@@ -474,7 +459,7 @@
             const isConflict = !isUserMoveValid(currentGrid, row, col, currentGrid[row][col]) && currentGrid[row][col] !== 0;
 
             if (isConflict) {
-                triggerBloodEffect(); // 答錯流血
+                triggerBloodEffect(); 
             }
             
             renderGrid(currentGrid, true); 
@@ -483,10 +468,10 @@
             if (checkIfSolved()) {
                 updateMessage('🎉 恭喜！數獨已解開！煙火、10個聖誕老人和旋轉送給你！', 'green');
                 
-                container.classList.add('rotate-win'); // 答對旋轉
+                container.classList.add('rotate-win'); 
                 
                 triggerFireworks();
-                showSanta(); // 觸發 10 個聖誕老人
+                showSanta(); 
                 
                 setTimeout(() => {
                      container.classList.remove('rotate-win');
@@ -518,7 +503,8 @@
         function initGame() {
             messageElement.textContent = '';
             celebrationOverlay.style.display = 'none'; 
-            celebrationOverlay.innerHTML = ''; // 清理所有聖誕老人
+            celebrationOverlay.innerHTML = ''; 
+            santaAnimationRunning = false; // 停止投擲
             tauntOverlay.style.opacity = 0; 
             container.classList.remove('rotate-win'); 
             
@@ -528,10 +514,9 @@
             renderGrid(currentGrid);
         }
 
-        // --- 事件監聽器 ---
+        // --- 事件監聽器 (保持不變) ---
         solveButton.addEventListener('click', () => {
             showTauntMessage(); 
-             
             celebrationOverlay.style.display = 'none';
             container.classList.remove('rotate-win');
             
@@ -549,7 +534,6 @@
         });
 
         newGameButton.addEventListener('click', initGame);
-
 
         // --- 啟動遊戲 ---
         document.addEventListener('DOMContentLoaded', initGame);
