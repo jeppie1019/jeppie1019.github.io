@@ -3,15 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>數獨 - 黑色大讚版</title>
+    <title>數獨 - 加大加深聖誕版</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.js"></script>
     <style>
         :root {
             --bg-gradient: radial-gradient(circle at center, #3c6382 0%, #0a3d62 100%);
             --container-bg: rgba(255, 255, 255, 0.98);
-            --grid-size: 400px; 
-            --cell-size: 44px;  
-            --thick-border: 3px solid #000;
+            /* --- 修改處：加大格子尺寸 --- */
+            --cell-size: 52px;  
+            /* --- 修改處：加深邊框粗度 (3px -> 5px) --- */
+            --thick-border: 5px solid #000;
         }
 
         body {
@@ -38,9 +39,9 @@
         .container {
             text-align: center;
             background: var(--container-bg);
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            padding: 25px; /* 稍微增加內距 */
+            border-radius: 16px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
             position: relative;
             z-index: 10; 
             transition: transform 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -48,14 +49,15 @@
 
         .rotate-win { transform: rotate(720deg) scale(1.05); }
 
-        h1 { color: #2c3e50; font-size: 2.5rem; margin: 0 0 10px 0; letter-spacing: 5px; font-weight: 900; }
+        h1 { color: #2c3e50; font-size: 2.8rem; margin: 0 0 15px 0; letter-spacing: 5px; font-weight: 900; }
 
         .grid {
             display: grid;
             grid-template-columns: repeat(9, var(--cell-size));
             grid-template-rows: repeat(9, var(--cell-size));
-            width: calc(var(--cell-size) * 9 + 10px);
-            height: calc(var(--cell-size) * 9 + 10px);
+            /* --- 修改處：調整總寬度計算以適應更大的格子和更粗的邊框 --- */
+            width: calc(var(--cell-size) * 9 + 18px);
+            height: calc(var(--cell-size) * 9 + 18px);
             border: var(--thick-border); 
             margin: 0 auto;
             background-color: #333; 
@@ -69,7 +71,8 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 20px; 
+            /* --- 修改處：稍微加大字體 --- */
+            font-size: 24px; 
             font-weight: 800;
             cursor: pointer;
             background-color: #fff;
@@ -77,11 +80,11 @@
             outline: none;
         }
 
-        /* 九宮格線條修正 */
-        .cell:nth-child(3n) { border-right: 3px solid #000; }
+        /* --- 修改處：九宮格線條加深 (3px -> 5px) --- */
+        .cell:nth-child(3n) { border-right: 5px solid #000; }
         .cell:nth-child(9n) { border-right: none; }
         .cell:nth-child(n+19):nth-child(-n+27),
-        .cell:nth-child(n+46):nth-child(-n+54) { border-bottom: 3px solid #000; }
+        .cell:nth-child(n+46):nth-child(-n+54) { border-bottom: 5px solid #000; }
 
         .cell.fixed { background-color: #f1f2f6; color: #57604f; cursor: default; }
         .cell.error { background-color: #ff4757 !important; color: #fff !important; }
@@ -94,15 +97,15 @@
 
         /* 🎅 聖誕老人層 (最前面) */
         #celebration-overlay { z-index: 9999 !important; }
-        .santa-sleigh { position: absolute; left: -150px; font-size: 70px; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.3)); }
-        .gift-item { position: absolute; font-size: 35px; animation: drop-anim 3s linear forwards; }
+        .santa-sleigh { position: absolute; left: -150px; font-size: 80px; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.3)); }
+        .gift-item { position: absolute; font-size: 40px; animation: drop-anim 3s linear forwards; }
 
         /* 👍 黑色讚掉落效果 */
         .thumbs-up {
             position: fixed;
-            top: -60px;
-            font-size: 60px;
-            color: #000; /* 黑色讚 */
+            top: -70px;
+            font-size: 70px;
+            color: #000;
             z-index: 1000;
             pointer-events: none;
             filter: drop-shadow(0 0 10px rgba(255,255,255,0.5));
@@ -120,10 +123,10 @@
             100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
         }
 
-        .controls { margin-top: 20px; }
+        .controls { margin-top: 25px; }
         button {
-            padding: 10px 20px; font-size: 16px; font-weight: bold; margin: 5px;
-            cursor: pointer; border: none; border-radius: 6px; transition: 0.2s;
+            padding: 12px 25px; font-size: 18px; font-weight: bold; margin: 8px;
+            cursor: pointer; border: none; border-radius: 8px; transition: 0.2s;
         }
         #solve-button { background: #ff4757; color: white; }
         #new-game-button { background: #1e90ff; color: white; }
@@ -138,7 +141,7 @@
             <button id="solve-button">自動求解</button>
             <button id="new-game-button">新遊戲</button>
         </div>
-        <p id="message" style="font-size: 1.1rem; margin-top: 10px; font-weight: bold; color: #2f3542;"></p>
+        <p id="message" style="font-size: 1.2rem; margin-top: 15px; font-weight: bold; color: #2f3542;"></p>
     </div>
 
     <div id="blood-overlay" class="overlay"></div>
@@ -197,7 +200,7 @@
             thumbs.textContent = '👍';
             thumbs.style.left = Math.random() * 90 + 'vw';
             document.body.appendChild(thumbs);
-            setTimeout(() => thumbs.remove(), 1500); // 動畫結束後移除
+            setTimeout(() => thumbs.remove(), 1500);
         }
 
         function triggerBlood() {
@@ -258,7 +261,7 @@
                 triggerBlood();
             } else {
                 e.target.classList.remove('error');
-                triggerThumbsUp(); // 答對了！掉下黑色大讚
+                triggerThumbsUp();
             }
             checkWin();
         }
@@ -274,7 +277,7 @@
             container.classList.add('rotate-win');
             messageElement.textContent = "🎄 聖誕快樂！實力驚人！ 🎄";
             
-            confetti({ particleCount: 200, spread: 80, origin: { y: 0.6 } });
+            confetti({ particleCount: 250, spread: 90, origin: { y: 0.6 } });
 
             for (let i = 0; i < 10; i++) {
                 const santa = document.createElement('div');
