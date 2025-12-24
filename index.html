@@ -3,36 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>數獨 - 藍色夜空聖誕版</title>
+    <title>數獨 - 黑色大讚版</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.js"></script>
     <style>
         :root {
-            /* --- 修改處：背景顏色改為藍色漸層 --- */
-            --bg-gradient: radial-gradient(circle at center, #4a69bd 0%, #2c3e50 100%);
-            /* --- 修改處：容器稍微透明一點點，讓背景透出來更有層次感 --- */
-            --container-bg: rgba(255, 255, 255, 0.95);
-            --grid-size: 450px;
-            --cell-size: 50px;
-            --thick-border: 4px solid #000;
+            --bg-gradient: radial-gradient(circle at center, #3c6382 0%, #0a3d62 100%);
+            --container-bg: rgba(255, 255, 255, 0.98);
+            --grid-size: 400px; 
+            --cell-size: 44px;  
+            --thick-border: 3px solid #000;
         }
 
         body {
-            font-family: 'Noto Sans TC', sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            /* --- 修改處：使用 background 屬性以支持漸層 --- */
             background: var(--bg-gradient);
             margin: 0;
             overflow: hidden;
-            transition: background 0.8s ease, transform 0.1s;
+            transition: background 0.8s ease;
         }
 
-        body.victory-bg { background: #2ecc71 !important; }
+        body.victory-bg { background: #27ae60 !important; }
 
-        /* 答錯震動 */
-        .shake-screen { animation: screen-shake 0.12s ease-in-out infinite; }
+        .shake-screen { animation: screen-shake 0.1s ease-in-out infinite; }
         @keyframes screen-shake {
             0% { transform: translate(2px, 2px); }
             50% { transform: translate(-2px, -2px); }
@@ -42,37 +38,29 @@
         .container {
             text-align: center;
             background: var(--container-bg);
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
             position: relative;
-            z-index: 10; /* 容器層級較低 */
+            z-index: 10; 
             transition: transform 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            backdrop-filter: blur(5px); /* 增加一點毛玻璃效果 */
         }
 
         .rotate-win { transform: rotate(720deg) scale(1.05); }
 
-        h1 { 
-            color: #1a1a1a; 
-            font-size: 3rem;
-            margin: 0 0 15px 0; 
-            letter-spacing: 10px;
-            font-weight: 900;
-        }
+        h1 { color: #2c3e50; font-size: 2.5rem; margin: 0 0 10px 0; letter-spacing: 5px; font-weight: 900; }
 
-        /* 數獨盤面 */
         .grid {
             display: grid;
             grid-template-columns: repeat(9, var(--cell-size));
             grid-template-rows: repeat(9, var(--cell-size));
-            width: var(--grid-size);
-            height: var(--grid-size);
+            width: calc(var(--cell-size) * 9 + 10px);
+            height: calc(var(--cell-size) * 9 + 10px);
             border: var(--thick-border); 
             margin: 0 auto;
-            background-color: #bbb; 
+            background-color: #333; 
             gap: 1px;
-            box-sizing: content-box;
+            padding: 1px;
         }
 
         .cell {
@@ -81,46 +69,64 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 22px; 
+            font-size: 20px; 
             font-weight: 800;
             cursor: pointer;
             background-color: #fff;
             user-select: none;
             outline: none;
-            box-sizing: border-box;
         }
 
-        /* --- 九宮格加深線條 --- */
+        /* 九宮格線條修正 */
         .cell:nth-child(3n) { border-right: 3px solid #000; }
         .cell:nth-child(9n) { border-right: none; }
         .cell:nth-child(n+19):nth-child(-n+27),
         .cell:nth-child(n+46):nth-child(-n+54) { border-bottom: 3px solid #000; }
 
-        .cell.fixed { background-color: #f5f5f5; color: #666; cursor: default; }
-        .cell.error { background-color: #ff5252 !important; color: #fff !important; }
+        .cell.fixed { background-color: #f1f2f6; color: #57604f; cursor: default; }
+        .cell.error { background-color: #ff4757 !important; color: #fff !important; }
 
         /* 特效層 */
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
-        #blood-overlay { background: radial-gradient(circle, rgba(255,0,0,0) 40%, rgba(200,0,0,0.7) 100%); z-index: 150; opacity: 0; transition: opacity 0.1s; }
-        #taunt-overlay { background: rgba(0,0,0,0.9); z-index: 200; opacity: 0; display: flex; justify-content: center; align-items: center; transition: opacity 0.3s; }
-        .taunt-text { font-size: 10vw; color: white; font-weight: 900; text-shadow: 0 0 20px red; }
+        #blood-overlay { background: radial-gradient(circle, rgba(255,0,0,0) 40%, rgba(255,0,0,0.6) 100%); z-index: 50; opacity: 0; transition: opacity 0.1s; }
+        #taunt-overlay { background: rgba(0,0,0,0.9); z-index: 2000; opacity: 0; display: flex; justify-content: center; align-items: center; transition: opacity 0.3s; }
+        .taunt-text { font-size: 8vw; color: white; font-weight: 900; text-shadow: 0 0 20px red; }
 
-        /* 聖誕老人層級設定 (z-index: 100, 比容器的 10 高，所以會在前面飛) */
-        .santa-sleigh { position: absolute; left: -150px; font-size: 60px; z-index: 100; }
-        .gift-item { position: absolute; font-size: 30px; z-index: 101; animation: drop 3s linear forwards; }
-        @keyframes drop {
+        /* 🎅 聖誕老人層 (最前面) */
+        #celebration-overlay { z-index: 9999 !important; }
+        .santa-sleigh { position: absolute; left: -150px; font-size: 70px; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.3)); }
+        .gift-item { position: absolute; font-size: 35px; animation: drop-anim 3s linear forwards; }
+
+        /* 👍 黑色讚掉落效果 */
+        .thumbs-up {
+            position: fixed;
+            top: -60px;
+            font-size: 60px;
+            color: #000; /* 黑色讚 */
+            z-index: 1000;
+            pointer-events: none;
+            filter: drop-shadow(0 0 10px rgba(255,255,255,0.5));
+            animation: thumbs-drop 1.2s ease-in forwards;
+        }
+
+        @keyframes thumbs-drop {
+            0% { transform: translateY(0) scale(1) rotate(0deg); opacity: 1; }
+            50% { transform: translateY(50vh) scale(1.5) rotate(10deg); opacity: 1; }
+            100% { transform: translateY(110vh) scale(1) rotate(-10deg); opacity: 0; }
+        }
+
+        @keyframes drop-anim {
             0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(105vh) rotate(540deg); opacity: 0; }
+            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
         }
 
         .controls { margin-top: 20px; }
         button {
-            padding: 10px 25px; font-size: 18px; font-weight: bold; margin: 5px;
-            cursor: pointer; border: none; border-radius: 8px; transition: 0.2s;
+            padding: 10px 20px; font-size: 16px; font-weight: bold; margin: 5px;
+            cursor: pointer; border: none; border-radius: 6px; transition: 0.2s;
         }
-        #solve-button { background: #ff5252; color: white; }
-        #new-game-button { background: #4caf50; color: white; }
-        button:hover { filter: brightness(1.2); transform: translateY(-2px); }
+        #solve-button { background: #ff4757; color: white; }
+        #new-game-button { background: #1e90ff; color: white; }
     </style>
 </head>
 <body>
@@ -132,7 +138,7 @@
             <button id="solve-button">自動求解</button>
             <button id="new-game-button">新遊戲</button>
         </div>
-        <p id="message" style="font-size: 1.2rem; margin-top: 15px; font-weight: bold; color: #333;"></p>
+        <p id="message" style="font-size: 1.1rem; margin-top: 10px; font-weight: bold; color: #2f3542;"></p>
     </div>
 
     <div id="blood-overlay" class="overlay"></div>
@@ -151,7 +157,6 @@
         const COLORS = ['#FFD700', '#FF69B4', '#00FFFF', '#ADFF2F', '#FF4500'];
         const ITEMS = ['🎁', '⭐', '🌙', '✨', '🍭', '❄️'];
 
-        // 核心檢查邏輯
         function isValid(board, r, c, n) {
             if (n === 0) return true;
             for (let i = 0; i < 9; i++) {
@@ -186,19 +191,35 @@
             return true;
         }
 
+        function triggerThumbsUp() {
+            const thumbs = document.createElement('div');
+            thumbs.className = 'thumbs-up';
+            thumbs.textContent = '👍';
+            thumbs.style.left = Math.random() * 90 + 'vw';
+            document.body.appendChild(thumbs);
+            setTimeout(() => thumbs.remove(), 1500); // 動畫結束後移除
+        }
+
+        function triggerBlood() {
+            document.body.classList.add('shake-screen');
+            bloodOverlay.style.opacity = '1';
+            setTimeout(() => {
+                document.body.classList.remove('shake-screen');
+                bloodOverlay.style.opacity = '0';
+            }, 200);
+        }
+
         function initGame() {
             container.classList.remove('rotate-win');
             document.body.classList.remove('victory-bg');
+            celebrationOverlay.innerHTML = '';
             messageElement.textContent = "";
             let b = Array(9).fill(0).map(() => Array(9).fill(0));
             solveSudoku(b);
-            
-            // 挖洞量
-            for (let i = 0; i < 42; i++) {
+            for (let i = 0; i < 40; i++) {
                 let r = Math.floor(Math.random() * 9), c = Math.floor(Math.random() * 9);
                 b[r][c] = 0;
             }
-            
             initialGrid = b.map(row => [...row]);
             currentGrid = b.map(row => [...row]);
             render();
@@ -223,14 +244,12 @@
         function handleInput(e, r, c) {
             const char = e.target.textContent.slice(-1);
             const val = parseInt(char);
-            
             if (isNaN(val) || val === 0) {
                 e.target.textContent = "";
                 currentGrid[r][c] = 0;
                 e.target.classList.remove('error');
                 return;
             }
-            
             e.target.textContent = val;
             currentGrid[r][c] = val; 
 
@@ -239,33 +258,21 @@
                 triggerBlood();
             } else {
                 e.target.classList.remove('error');
+                triggerThumbsUp(); // 答對了！掉下黑色大讚
             }
             checkWin();
         }
 
-        function triggerBlood() {
-            document.body.classList.add('shake-screen');
-            bloodOverlay.style.opacity = '1';
-            setTimeout(() => {
-                document.body.classList.remove('shake-screen');
-                bloodOverlay.style.opacity = '0';
-            }, 250);
-        }
-
         function checkWin() {
-            for(let r=0; r<9; r++) {
-                for(let c=0; c<9; c++) {
-                    if(currentGrid[r][c] === 0 || !isValid(currentGrid, r, c, currentGrid[r][c])) return;
-                }
-            }
+            for(let r=0; r<9; r++) for(let c=0; c<9; c++) 
+                if(currentGrid[r][c] === 0 || !isValid(currentGrid, r, c, currentGrid[r][c])) return;
             startCelebration();
         }
 
         function startCelebration() {
             document.body.classList.add('victory-bg');
             container.classList.add('rotate-win');
-            messageElement.textContent = "🏆 勝利！接受聖誕老人的洗禮吧！";
-            celebrationOverlay.style.display = 'block';
+            messageElement.textContent = "🎄 聖誕快樂！實力驚人！ 🎄";
             
             confetti({ particleCount: 200, spread: 80, origin: { y: 0.6 } });
 
@@ -273,8 +280,8 @@
                 const santa = document.createElement('div');
                 santa.className = 'santa-sleigh';
                 santa.textContent = '🎅🏻';
-                santa.style.top = (Math.random() * 70) + 'vh';
-                const speed = 7 + Math.random() * 4;
+                santa.style.top = (Math.random() * 80) + 'vh';
+                const speed = 6 + Math.random() * 4;
                 const delay = Math.random() * 3;
                 santa.style.transition = `left ${speed}s linear ${delay}s`;
                 celebrationOverlay.appendChild(santa);
@@ -282,15 +289,14 @@
                 let giftTimer = setInterval(() => {
                     const rect = santa.getBoundingClientRect();
                     if (rect.left > window.innerWidth) return clearInterval(giftTimer);
-                    
                     const gift = document.createElement('div');
                     gift.className = 'gift-item';
                     gift.textContent = ITEMS[Math.floor(Math.random() * ITEMS.length)];
-                    gift.style.left = (rect.left + 50) + 'px';
+                    gift.style.left = (rect.left + 60) + 'px';
                     gift.style.top = rect.top + 'px';
                     gift.style.color = COLORS[Math.floor(Math.random() * COLORS.length)];
                     celebrationOverlay.appendChild(gift);
-                }, 200);
+                }, 250);
 
                 setTimeout(() => { santa.style.left = '120vw'; }, 100);
             }
@@ -303,12 +309,11 @@
                 currentGrid = initialGrid.map(row => [...row]);
                 solveSudoku(currentGrid);
                 render();
-                messageElement.textContent = "真的嫩到出汁。";
+                messageElement.textContent = "唉，嫩。";
             }, 1000);
         };
 
         document.getElementById('new-game-button').onclick = initGame;
-
         initGame();
     </script>
 </body>
