@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>數獨 - 終極霸氣版</title>
+    <title>數獨 - 終極修正版</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.js"></script>
     <style>
         :root {
             --bg-color: #0f0f0f;
             --container-bg: #ffffff;
-            --grid-size: 630px; /* 盤面加大 */
-            --cell-size: 70px;  /* 格子加大 */
+            --grid-size: 630px; 
+            --cell-size: 70px;  
+            --thick-border: 5px solid #000;
         }
 
         body {
@@ -22,15 +23,20 @@
             background-color: var(--bg-color);
             margin: 0;
             overflow: hidden;
-            transition: transform 0.1s;
+            transition: background-color 1s ease, transform 0.1s;
+        }
+
+        /* 答對時背景變綠 */
+        body.victory-bg {
+            background-color: #27ae60 !important;
         }
 
         /* 答錯流血震動 */
         .shake-screen { animation: screen-shake 0.1s ease-in-out infinite; }
         @keyframes screen-shake {
-            0% { transform: translate(3px, 3px) rotate(0deg); }
-            50% { transform: translate(-3px, -3px) rotate(-1deg); }
-            100% { transform: translate(3px, 3px) rotate(1deg); }
+            0% { transform: translate(3px, 3px); }
+            50% { transform: translate(-3px, -3px); }
+            100% { transform: translate(3px, 3px); }
         }
 
         .container {
@@ -44,27 +50,26 @@
             transition: transform 2s cubic-bezier(0.68, -0.55, 0.27, 1.55);
         }
 
-        /* 答對大旋轉 */
-        .rotate-win { transform: rotate(1080deg) scale(1.2); }
+        .rotate-win { transform: rotate(1080deg) scale(1.1); }
 
         h1 { 
             color: #1a1a1a; 
-            font-size: 5rem; /* 標題超大 */
+            font-size: 5.5rem; 
             margin: 0 0 20px 0; 
-            letter-spacing: 20px;
-            text-shadow: 5px 5px 0px #eee;
+            letter-spacing: 25px;
+            font-weight: 900;
         }
 
-        /* 數獨大盤面 */
+        /* 數獨大盤面 - 九宮格邊框加深 */
         .grid {
             display: grid;
             grid-template-columns: repeat(9, var(--cell-size));
             grid-template-rows: repeat(9, var(--cell-size));
             width: var(--grid-size);
             height: var(--grid-size);
-            border: 5px solid #000;
+            border: var(--thick-border); /* 最外層加深 */
             margin: 0 auto;
-            background-color: #000;
+            background-color: #ccc; /* 普通邊線顏色 */
             gap: 1px;
         }
 
@@ -74,53 +79,47 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 32px; /* 數字加大 */
+            font-size: 32px; 
             font-weight: 900;
             cursor: pointer;
             background-color: #fff;
             user-select: none;
             outline: none;
-            transition: background 0.2s;
+            box-sizing: border-box;
         }
 
-        /* 九宮格加粗邊界 */
+        /* --- 九宮格邊框加深邏輯 --- */
+        /* 每三列右邊加深 */
         .cell:nth-child(3n) { border-right: 4px solid #000; }
         .cell:nth-child(9n) { border-right: none; }
+        /* 每三行下面加深 */
         .cell:nth-child(n+19):nth-child(-n+27),
         .cell:nth-child(n+46):nth-child(-n+54) { border-bottom: 4px solid #000; }
 
-        .cell:hover { background-color: #f0f0f0; }
-        .cell.fixed { background-color: #e0e0e0; color: #333; cursor: default; }
+        .cell.fixed { background-color: #f0f0f0; color: #555; cursor: default; }
         .cell.error { background-color: #ff4d4d !important; color: #fff !important; }
 
-        /* 特效疊層 */
+        /* 特效層 */
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
-        
-        #blood-overlay { background: radial-gradient(circle, rgba(255,0,0,0) 30%, rgba(150,0,0,0.8) 100%); z-index: 150; opacity: 0; transition: opacity 0.1s; }
-        
-        #taunt-overlay { 
-            background: rgba(0,0,0,0.95); z-index: 200; opacity: 0; 
-            display: flex; justify-content: center; align-items: center; transition: opacity 0.3s;
-        }
-        .taunt-text { font-size: 15vw; color: red; font-weight: 900; text-shadow: 0 0 50px red; }
+        #blood-overlay { background: radial-gradient(circle, rgba(255,0,0,0) 30%, rgba(180,0,0,0.8) 100%); z-index: 150; opacity: 0; transition: opacity 0.1s; }
+        #taunt-overlay { background: rgba(0,0,0,0.95); z-index: 200; opacity: 0; display: flex; justify-content: center; align-items: center; transition: opacity 0.3s; }
+        .taunt-text { font-size: 15vw; color: red; font-weight: 900; }
 
-        /* 聖誕老人 */
         .santa-sleigh { position: absolute; left: -200px; font-size: 80px; z-index: 100; }
-        .gift-item { position: absolute; font-size: 40px; z-index: 101; animation: drop 3s linear forwards; }
+        .gift-item { position: absolute; font-size: 40px; z-index: 101; animation: drop 3.5s linear forwards; }
         @keyframes drop {
             0% { transform: translateY(0) rotate(0deg); opacity: 1; }
             100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
         }
 
-        /* 按鈕 */
         .controls { margin-top: 30px; }
         button {
             padding: 15px 40px; font-size: 24px; font-weight: bold; margin: 0 10px;
-            cursor: pointer; border: none; border-radius: 10px; transition: 0.3s;
+            cursor: pointer; border: none; border-radius: 12px; transition: 0.3s;
         }
-        #solve-button { background: #ff4757; color: white; }
-        #new-game-button { background: #2ed573; color: white; }
-        button:hover { transform: scale(1.1); filter: brightness(1.2); }
+        #solve-button { background: #e74c3c; color: white; }
+        #new-game-button { background: #27ae60; color: white; }
+        button:hover { transform: scale(1.05); filter: brightness(1.1); }
     </style>
 </head>
 <body>
@@ -132,7 +131,7 @@
             <button id="solve-button">自動求解</button>
             <button id="new-game-button">新遊戲</button>
         </div>
-        <p id="message" style="font-size: 1.5rem; margin-top: 20px; font-weight: bold;"></p>
+        <p id="message" style="font-size: 1.8rem; margin-top: 20px; font-weight: bold; color: #2c3e50;"></p>
     </div>
 
     <div id="blood-overlay" class="overlay"></div>
@@ -148,14 +147,25 @@
         const messageElement = document.getElementById('message');
 
         let initialGrid = [], currentGrid = [];
-        const COLORS = ['#FFD700', '#FF69B4', '#00FFFF', '#ADFF2F', '#FF4500', '#FFFFFF'];
-        const ITEMS = ['🎁', '⭐', '🌙', '🎄', '✨', '🍭'];
+        const COLORS = ['#FFD700', '#FF69B4', '#00FFFF', '#ADFF2F', '#FF4500', '#FFFFFF', '#FFA500'];
+        const ITEMS = ['🎁', '⭐', '🌙', '🎄', '✨', '🍭', '❄️'];
 
-        // 數獨邏輯
+        // --- 修正後的檢查邏輯 ---
         function isValid(board, r, c, n) {
-            for (let i = 0; i < 9; i++) if (board[r][i] === n || board[i][c] === n) return false;
+            if (n === 0) return true;
+            for (let i = 0; i < 9; i++) {
+                // 檢查列衝突 (排除自己)
+                if (i !== c && board[r][i] === n) return false;
+                // 檢查行衝突 (排除自己)
+                if (i !== r && board[i][c] === n) return false;
+            }
+            // 檢查九宮格衝突 (排除自己)
             let rs = Math.floor(r / 3) * 3, cs = Math.floor(c / 3) * 3;
-            for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) if (board[rs + i][cs + j] === n) return false;
+            for (let i = rs; i < rs + 3; i++) {
+                for (let j = cs; j < cs + 3; j++) {
+                    if ((i !== r || j !== c) && board[i][j] === n) return false;
+                }
+            }
             return true;
         }
 
@@ -163,7 +173,8 @@
             for (let r = 0; r < 9; r++) {
                 for (let c = 0; c < 9; c++) {
                     if (board[r][c] === 0) {
-                        for (let n = 1; n <= 9; n++) {
+                        let nums = [1,2,3,4,5,6,7,8,9].sort(() => Math.random() - 0.5);
+                        for (let n of nums) {
                             if (isValid(board, r, c, n)) {
                                 board[r][c] = n;
                                 if (solveSudoku(board)) return true;
@@ -179,12 +190,13 @@
 
         function initGame() {
             container.classList.remove('rotate-win');
+            document.body.classList.remove('victory-bg');
             messageElement.textContent = "";
             let b = Array(9).fill(0).map(() => Array(9).fill(0));
-            solveSudoku(b); // 生成完整盤面
+            solveSudoku(b);
             
-            // 隨機挖洞 (難度)
-            for (let i = 0; i < 45; i++) {
+            // 挖掉一些數字
+            for (let i = 0; i < 40; i++) {
                 let r = Math.floor(Math.random() * 9), c = Math.floor(Math.random() * 9);
                 b[r][c] = 0;
             }
@@ -211,21 +223,26 @@
         }
 
         function handleInput(e, r, c) {
-            const val = parseInt(e.target.textContent.slice(-1));
+            const char = e.target.textContent.slice(-1);
+            const val = parseInt(char);
+            
             if (isNaN(val) || val === 0) {
                 e.target.textContent = "";
                 currentGrid[r][c] = 0;
+                e.target.classList.remove('error');
                 return;
             }
-            e.target.textContent = val;
             
+            e.target.textContent = val;
+            currentGrid[r][c] = val; // 先更新數值
+
+            // 檢查剛填入的這個數字是否符合規則
             if (!isValid(currentGrid, r, c, val)) {
                 e.target.classList.add('error');
                 triggerBlood();
             } else {
                 e.target.classList.remove('error');
             }
-            currentGrid[r][c] = val;
             checkWin();
         }
 
@@ -239,25 +256,30 @@
         }
 
         function checkWin() {
-            for(let r=0; r<9; r++) for(let c=0; c<9; c++) 
-                if(currentGrid[r][c] === 0 || !isValid(currentGrid, r, c, currentGrid[r][c])) return;
-            
-            messageElement.textContent = "🏆 絕世高手，盤面旋轉迎接勝利！";
+            // 檢查盤面是否填滿且無錯誤
+            for(let r=0; r<9; r++) {
+                for(let c=0; c<9; c++) {
+                    if(currentGrid[r][c] === 0 || !isValid(currentGrid, r, c, currentGrid[r][c])) return;
+                }
+            }
             startCelebration();
         }
 
         function startCelebration() {
+            document.body.classList.add('victory-bg');
             container.classList.add('rotate-win');
+            messageElement.textContent = "🏆 勝利！背景變綠，聖誕老人來啦！";
             celebrationOverlay.style.display = 'block';
-            confetti({ particleCount: 200, spread: 90, origin: { y: 0.7 } });
+            
+            confetti({ particleCount: 250, spread: 100, origin: { y: 0.6 } });
 
             for (let i = 0; i < 10; i++) {
                 const santa = document.createElement('div');
                 santa.className = 'santa-sleigh';
                 santa.textContent = '🎅🏻';
-                santa.style.top = (Math.random() * 60) + 'vh';
-                const speed = 10 + Math.random() * 5;
-                const delay = Math.random() * 5;
+                santa.style.top = (Math.random() * 70) + 'vh';
+                const speed = 8 + Math.random() * 4;
+                const delay = Math.random() * 4;
                 santa.style.transition = `left ${speed}s linear ${delay}s`;
                 celebrationOverlay.appendChild(santa);
 
@@ -268,11 +290,11 @@
                     const gift = document.createElement('div');
                     gift.className = 'gift-item';
                     gift.textContent = ITEMS[Math.floor(Math.random() * ITEMS.length)];
-                    gift.style.left = (rect.left + 50) + 'px';
+                    gift.style.left = (rect.left + 60) + 'px';
                     gift.style.top = rect.top + 'px';
                     gift.style.color = COLORS[Math.floor(Math.random() * COLORS.length)];
                     celebrationOverlay.appendChild(gift);
-                }, 150);
+                }, 180);
 
                 setTimeout(() => { santa.style.left = '120vw'; }, 100);
             }
@@ -285,8 +307,8 @@
                 currentGrid = initialGrid.map(row => [...row]);
                 solveSudoku(currentGrid);
                 render();
-                messageElement.textContent = "真的嫩，連想都不想。";
-            }, 1500);
+                messageElement.textContent = "唉，你真的超嫩。";
+            }, 1200);
         };
 
         document.getElementById('new-game-button').onclick = initGame;
