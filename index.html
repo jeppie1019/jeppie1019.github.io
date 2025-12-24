@@ -3,190 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>可玩的數獨遊戲</title>
+    <title>數獨 - 終極霸氣版</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.js"></script>
     <style>
-        /* --- CSS 樣式 --- */
+        :root {
+            --bg-color: #0f0f0f;
+            --container-bg: #ffffff;
+            --grid-size: 630px; /* 盤面加大 */
+            --cell-size: 70px;  /* 格子加大 */
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Noto Sans TC', sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background-color: #f4f4f4;
+            background-color: var(--bg-color);
             margin: 0;
+            overflow: hidden;
+            transition: transform 0.1s;
+        }
+
+        /* 答錯流血震動 */
+        .shake-screen { animation: screen-shake 0.1s ease-in-out infinite; }
+        @keyframes screen-shake {
+            0% { transform: translate(3px, 3px) rotate(0deg); }
+            50% { transform: translate(-3px, -3px) rotate(-1deg); }
+            100% { transform: translate(3px, 3px) rotate(1deg); }
         }
 
         .container {
             text-align: center;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            background: var(--container-bg);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 0 50px rgba(255, 255, 255, 0.2);
+            position: relative;
+            z-index: 10;
+            transition: transform 2s cubic-bezier(0.68, -0.55, 0.27, 1.55);
         }
 
-        h1 {
-            color: #333;
+        /* 答對大旋轉 */
+        .rotate-win { transform: rotate(1080deg) scale(1.2); }
+
+        h1 { 
+            color: #1a1a1a; 
+            font-size: 5rem; /* 標題超大 */
+            margin: 0 0 20px 0; 
+            letter-spacing: 20px;
+            text-shadow: 5px 5px 0px #eee;
         }
 
+        /* 數獨大盤面 */
         .grid {
             display: grid;
-            grid-template-columns: repeat(9, 1fr);
-            grid-template-rows: repeat(9, 1fr);
-            width: 450px; /* 9 * 50px */
-            height: 450px; /* 9 * 50px */
-            border: 3px solid #333;
-            margin: 20px auto;
+            grid-template-columns: repeat(9, var(--cell-size));
+            grid-template-rows: repeat(9, var(--cell-size));
+            width: var(--grid-size);
+            height: var(--grid-size);
+            border: 5px solid #000;
+            margin: 0 auto;
+            background-color: #000;
+            gap: 1px;
         }
 
         .cell {
-            width: 50px;
-            height: 50px;
-            border: 1px solid #ccc;
+            width: var(--cell-size);
+            height: var(--cell-size);
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 20px;
-            font-weight: bold;
-            box-sizing: border-box; 
+            font-size: 32px; /* 數字加大 */
+            font-weight: 900;
             cursor: pointer;
             background-color: #fff;
-            user-select: none; /* 防止內容被選中 */
-        }
-
-        .cell.fixed {
-            background-color: #eee;
-            color: #333;
-            cursor: default;
-        }
-
-        .cell.editable {
-            color: #007bff; /* 用戶輸入的顏色 */
+            user-select: none;
             outline: none;
-        }
-        
-        .cell:focus {
-            background-color: #ffffcc; /* 點擊時高亮 */
-        }
-        
-        .cell.error {
-            background-color: #ffdddd; /* 錯誤提示 */
-            color: #cc0000 !important; 
+            transition: background 0.2s;
         }
 
-        /* 粗線分隔 3x3 宮格 */
-        .cell:nth-child(3n) { border-right: 3px solid #333; }
-        .cell:nth-child(9n + 1) { border-left: none; }
-        .cell:nth-child(9n):not(:nth-child(81)) { border-right: none; }
-        .cell:nth-child(27n) ~ .cell { border-top: 3px solid #333; }
-        
-        /* 修正頂部和左側邊界 */
-        .cell:nth-child(1), .cell:nth-child(2), .cell:nth-child(3),
-        .cell:nth-child(10), .cell:nth-child(11), .cell:nth-child(12),
-        .cell:nth-child(19), .cell:nth-child(20), .cell:nth-child(21) { border-top: none; }
-        .cell:nth-child(27n) { border-bottom: 3px solid #333; }
-        .grid .cell:nth-last-child(-n+9) { border-bottom: none !important; }
+        /* 九宮格加粗邊界 */
+        .cell:nth-child(3n) { border-right: 4px solid #000; }
+        .cell:nth-child(9n) { border-right: none; }
+        .cell:nth-child(n+19):nth-child(-n+27),
+        .cell:nth-child(n+46):nth-child(-n+54) { border-bottom: 4px solid #000; }
 
-        .controls button {
-            padding: 10px 20px;
-            margin: 10px 10px;
-            font-size: 16px;
-            cursor: pointer;
-            border: 1px solid #007bff;
-            background-color: #007bff;
-            color: white;
-            border-radius: 4px;
-            transition: background-color 0.3s;
+        .cell:hover { background-color: #f0f0f0; }
+        .cell.fixed { background-color: #e0e0e0; color: #333; cursor: default; }
+        .cell.error { background-color: #ff4d4d !important; color: #fff !important; }
+
+        /* 特效疊層 */
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        
+        #blood-overlay { background: radial-gradient(circle, rgba(255,0,0,0) 30%, rgba(150,0,0,0.8) 100%); z-index: 150; opacity: 0; transition: opacity 0.1s; }
+        
+        #taunt-overlay { 
+            background: rgba(0,0,0,0.95); z-index: 200; opacity: 0; 
+            display: flex; justify-content: center; align-items: center; transition: opacity 0.3s;
+        }
+        .taunt-text { font-size: 15vw; color: red; font-weight: 900; text-shadow: 0 0 50px red; }
+
+        /* 聖誕老人 */
+        .santa-sleigh { position: absolute; left: -200px; font-size: 80px; z-index: 100; }
+        .gift-item { position: absolute; font-size: 40px; z-index: 101; animation: drop 3s linear forwards; }
+        @keyframes drop {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
         }
 
-        .controls button:hover {
-            background-color: #0056b3;
+        /* 按鈕 */
+        .controls { margin-top: 30px; }
+        button {
+            padding: 15px 40px; font-size: 24px; font-weight: bold; margin: 0 10px;
+            cursor: pointer; border: none; border-radius: 10px; transition: 0.3s;
         }
-        
-        #message {
-            font-weight: bold;
-            margin-top: 10px;
-        }
+        #solve-button { background: #ff4757; color: white; }
+        #new-game-button { background: #2ed573; color: white; }
+        button:hover { transform: scale(1.1); filter: brightness(1.2); }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>數獨遊戲</h1>
-        
-        <div id="sudoku-grid" class="grid">
-            </div>
 
+    <div class="container">
+        <h1>數 獨</h1>
+        <div id="sudoku-grid" class="grid"></div>
         <div class="controls">
             <button id="solve-button">自動求解</button>
             <button id="new-game-button">新遊戲</button>
         </div>
-        
-        <p id="message"></p>
+        <p id="message" style="font-size: 1.5rem; margin-top: 20px; font-weight: bold;"></p>
     </div>
 
+    <div id="blood-overlay" class="overlay"></div>
+    <div id="taunt-overlay" class="overlay"><div class="taunt-text">你超嫩！</div></div>
+    <div id="celebration-overlay" class="overlay"></div>
+
     <script>
-        /* --- JavaScript 核心邏輯 --- */
-        const GRID_SIZE = 9;
         const gridElement = document.getElementById('sudoku-grid');
-        const solveButton = document.getElementById('solve-button');
-        const newGameButton = document.getElementById('new-game-button');
+        const bloodOverlay = document.getElementById('blood-overlay');
+        const tauntOverlay = document.getElementById('taunt-overlay');
+        const celebrationOverlay = document.getElementById('celebration-overlay');
+        const container = document.querySelector('.container');
         const messageElement = document.getElementById('message');
 
-        let currentGrid = []; // 用戶當前輸入的狀態
-        let initialGrid = []; // 初始謎題狀態
+        let initialGrid = [], currentGrid = [];
+        const COLORS = ['#FFD700', '#FF69B4', '#00FFFF', '#ADFF2F', '#FF4500', '#FFFFFF'];
+        const ITEMS = ['🎁', '⭐', '🌙', '🎄', '✨', '🍭'];
 
-        // --- 核心演算法：回溯法檢查與求解 ---
-
-        /**
-         * 檢查在給定位置 (row, col) 放置 number 是否有效。
-         */
-        function isValid(board, row, col, number) {
-            // 檢查行和列
-            for (let k = 0; k < GRID_SIZE; k++) {
-                if (board[row][k] === number || board[k][col] === number) {
-                    return false;
-                }
-            }
-
-            // 檢查 3x3 宮格
-            const boxRowStart = row - (row % 3);
-            const boxColStart = col - (col % 3);
-            for (let i = 0; i < 3; i++) {
-                for (let j = 0; j < 3; j++) {
-                    if (board[boxRowStart + i][boxColStart + j] === number) {
-                        return false;
-                    }
-                }
-            }
+        // 數獨邏輯
+        function isValid(board, r, c, n) {
+            for (let i = 0; i < 9; i++) if (board[r][i] === n || board[i][c] === n) return false;
+            let rs = Math.floor(r / 3) * 3, cs = Math.floor(c / 3) * 3;
+            for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) if (board[rs + i][cs + j] === n) return false;
             return true;
         }
-        
-        /**
-         * 檢查當前用戶輸入的數字是否與數獨規則衝突
-         */
-        function isUserMoveValid(board, row, col, number) {
-             // 暫時將當前位置設為 0，避免檢查到自身
-            let temp = board[row][col];
-            board[row][col] = 0; 
-            const valid = isValid(board, row, col, number);
-            board[row][col] = temp; // 恢復數字
-            return valid;
-        }
 
-
-        /**
-         * 使用回溯法求解數獨。
-         */
         function solveSudoku(board) {
-            for (let i = 0; i < GRID_SIZE; i++) {
-                for (let j = 0; j < GRID_SIZE; j++) {
-                    if (board[i][j] === 0) {
-                        for (let number = 1; number <= 9; number++) {
-                            if (isValid(board, i, j, number)) {
-                                board[i][j] = number;
-                                if (solveSudoku(board)) {
-                                    return true;
-                                }
-                                board[i][j] = 0; // 回溯
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    if (board[r][c] === 0) {
+                        for (let n = 1; n <= 9; n++) {
+                            if (isValid(board, r, c, n)) {
+                                board[r][c] = n;
+                                if (solveSudoku(board)) return true;
+                                board[r][c] = 0;
                             }
                         }
                         return false;
@@ -195,210 +176,122 @@
             }
             return true;
         }
-        
-        // --- 遊戲生成與渲染 ---
 
-        /**
-         * 隨機生成一個數獨謎題（簡化為從一個已知解挖洞）
-         */
-        function generateSudoku() {
-            // 確保有一個有效的起始解決方案
-            const solved = [
-                [5, 3, 4, 6, 7, 8, 9, 1, 2],
-                [6, 7, 2, 1, 9, 5, 3, 4, 8],
-                [1, 9, 8, 3, 4, 2, 5, 6, 7],
-                [8, 5, 9, 7, 6, 1, 4, 2, 3],
-                [4, 2, 6, 8, 5, 3, 7, 9, 1],
-                [7, 1, 3, 9, 2, 4, 8, 5, 6],
-                [9, 6, 1, 5, 3, 7, 2, 8, 4],
-                [2, 8, 7, 4, 1, 9, 6, 3, 5],
-                [3, 4, 5, 2, 8, 6, 1, 7, 9]
-            ];
+        function initGame() {
+            container.classList.remove('rotate-win');
+            messageElement.textContent = "";
+            let b = Array(9).fill(0).map(() => Array(9).fill(0));
+            solveSudoku(b); // 生成完整盤面
             
-            let puzzle = solved.map(row => [...row]); 
-
-            // 挖洞數量 (難度，約 40 個空位為中等)
-            let holes = 40; 
-            let count = 0;
-            while (count < holes) {
-                let r = Math.floor(Math.random() * 9);
-                let c = Math.floor(Math.random() * 9);
-                if (puzzle[r][c] !== 0) {
-                    puzzle[r][c] = 0;
-                    count++;
-                }
+            // 隨機挖洞 (難度)
+            for (let i = 0; i < 45; i++) {
+                let r = Math.floor(Math.random() * 9), c = Math.floor(Math.random() * 9);
+                b[r][c] = 0;
             }
-            return puzzle;
+            
+            initialGrid = b.map(row => [...row]);
+            currentGrid = b.map(row => [...row]);
+            render();
         }
 
-
-        /**
-         * 渲染數獨遊戲板到 HTML 
-         */
-        function renderGrid(board, highlightErrors = false) {
-            gridElement.innerHTML = ''; 
-
-            for (let i = 0; i < GRID_SIZE; i++) {
-                for (let j = 0; j < GRID_SIZE; j++) {
+        function render() {
+            gridElement.innerHTML = '';
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
                     const cell = document.createElement('div');
-                    cell.classList.add('cell');
-                    cell.dataset.row = i;
-                    cell.dataset.col = j;
-                    
-                    const value = board[i][j];
-                    
-                    if (initialGrid[i][j] !== 0) {
-                        cell.textContent = value;
-                        cell.classList.add('fixed');
-                    } else {
-                        // 可編輯單元格
-                        if (value !== 0) {
-                            cell.textContent = value;
-                            cell.classList.add('editable');
-                            
-                            // 檢查當前數字是否導致衝突
-                            if (highlightErrors && !isUserMoveValid(board, i, j, value)) {
-                                cell.classList.add('error');
-                            }
-                        }
-                        
-                        cell.contentEditable = 'true'; 
-                        cell.setAttribute('inputmode', 'numeric'); // 針對移動設備
-                        cell.addEventListener('input', handleCellInput);
-                        cell.addEventListener('keydown', restrictInput);
+                    cell.className = 'cell' + (initialGrid[r][c] !== 0 ? ' fixed' : '');
+                    cell.textContent = currentGrid[r][c] !== 0 ? currentGrid[r][c] : '';
+                    if (initialGrid[r][c] === 0) {
+                        cell.contentEditable = true;
+                        cell.oninput = (e) => handleInput(e, r, c);
                     }
                     gridElement.appendChild(cell);
                 }
             }
         }
 
-        // --- 用戶輸入處理 ---
-
-        /**
-         * 限制用戶輸入，只允許 1-9 單個數字或清除。
-         */
-        function restrictInput(event) {
-            const key = event.key;
-            // 允許 Backspace, Delete, Arrow Keys
-            if (['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(key)) {
-                return; 
+        function handleInput(e, r, c) {
+            const val = parseInt(e.target.textContent.slice(-1));
+            if (isNaN(val) || val === 0) {
+                e.target.textContent = "";
+                currentGrid[r][c] = 0;
+                return;
             }
-            // 只允許 1-9 的數字鍵
-            if (!/^[1-9]$/.test(key)) {
-                event.preventDefault();
-            }
-            // 確保單元格內只保留一個字符
-            if (event.target.textContent.length >= 1 && !['Backspace', 'Delete'].includes(key)) {
-                event.preventDefault();
-            }
-        }
-
-
-        /**
-         * 處理用戶輸入並更新遊戲狀態
-         */
-        function handleCellInput(event) {
-            const cell = event.target;
-            let value = cell.textContent.trim();
-            const row = parseInt(cell.dataset.row);
-            const col = parseInt(cell.dataset.col);
-
-            // 1. 清理和驗證輸入
-            if (!/^[1-9]$/.test(value)) {
-                cell.textContent = ''; 
-                currentGrid[row][col] = 0;
+            e.target.textContent = val;
+            
+            if (!isValid(currentGrid, r, c, val)) {
+                e.target.classList.add('error');
+                triggerBlood();
             } else {
-                cell.textContent = value; 
-                currentGrid[row][col] = parseInt(value);
+                e.target.classList.remove('error');
             }
+            currentGrid[r][c] = val;
+            checkWin();
+        }
+
+        function triggerBlood() {
+            document.body.classList.add('shake-screen');
+            bloodOverlay.style.opacity = '1';
+            setTimeout(() => {
+                document.body.classList.remove('shake-screen');
+                bloodOverlay.style.opacity = '0';
+            }, 300);
+        }
+
+        function checkWin() {
+            for(let r=0; r<9; r++) for(let c=0; c<9; c++) 
+                if(currentGrid[r][c] === 0 || !isValid(currentGrid, r, c, currentGrid[r][c])) return;
             
-            // 2. 重新渲染以檢查錯誤
-            renderGrid(currentGrid, true); 
-            
-            // 3. 檢查遊戲是否完成
-            if (checkIfSolved()) {
-                updateMessage('🎉 恭喜！數獨已解開！', 'green');
-            } else {
-                // 如果有錯誤，保持錯誤提示；否則清空訊息
-                if (!cell.classList.contains('error')) {
-                     updateMessage('');
-                }
+            messageElement.textContent = "🏆 絕世高手，盤面旋轉迎接勝利！";
+            startCelebration();
+        }
+
+        function startCelebration() {
+            container.classList.add('rotate-win');
+            celebrationOverlay.style.display = 'block';
+            confetti({ particleCount: 200, spread: 90, origin: { y: 0.7 } });
+
+            for (let i = 0; i < 10; i++) {
+                const santa = document.createElement('div');
+                santa.className = 'santa-sleigh';
+                santa.textContent = '🎅🏻';
+                santa.style.top = (Math.random() * 60) + 'vh';
+                const speed = 10 + Math.random() * 5;
+                const delay = Math.random() * 5;
+                santa.style.transition = `left ${speed}s linear ${delay}s`;
+                celebrationOverlay.appendChild(santa);
+
+                let giftTimer = setInterval(() => {
+                    const rect = santa.getBoundingClientRect();
+                    if (rect.left > window.innerWidth) return clearInterval(giftTimer);
+                    
+                    const gift = document.createElement('div');
+                    gift.className = 'gift-item';
+                    gift.textContent = ITEMS[Math.floor(Math.random() * ITEMS.length)];
+                    gift.style.left = (rect.left + 50) + 'px';
+                    gift.style.top = rect.top + 'px';
+                    gift.style.color = COLORS[Math.floor(Math.random() * COLORS.length)];
+                    celebrationOverlay.appendChild(gift);
+                }, 150);
+
+                setTimeout(() => { santa.style.left = '120vw'; }, 100);
             }
         }
 
-        /**
-         * 檢查當前遊戲板是否完全解開且正確
-         */
-        function checkIfSolved() {
-            // 檢查是否有空位
-            for(let i=0; i<GRID_SIZE; i++) {
-                for(let j=0; j<GRID_SIZE; j++) {
-                    if (currentGrid[i][j] === 0) {
-                        return false; 
-                    }
-                }
-            }
-            
-            // 檢查是否有衝突 (如果 renderGrid 已經高亮衝突，這裡只需確保沒有衝突)
-            for(let i=0; i<GRID_SIZE; i++) {
-                for(let j=0; j<GRID_SIZE; j++) {
-                    let number = currentGrid[i][j];
-                    if (!isUserMoveValid(currentGrid, i, j, number)) {
-                        return false; 
-                    }
-                }
-            }
-            return true;
-        }
+        document.getElementById('solve-button').onclick = () => {
+            tauntOverlay.style.opacity = '1';
+            setTimeout(() => {
+                tauntOverlay.style.opacity = '0';
+                currentGrid = initialGrid.map(row => [...row]);
+                solveSudoku(currentGrid);
+                render();
+                messageElement.textContent = "真的嫩，連想都不想。";
+            }, 1500);
+        };
 
-        /**
-         * 顯示訊息
-         */
-        function updateMessage(text, color = 'red') {
-            messageElement.textContent = text;
-            messageElement.style.color = color;
-        }
+        document.getElementById('new-game-button').onclick = initGame;
 
-        /**
-         * 初始化遊戲
-         */
-        function initGame() {
-            messageElement.textContent = '';
-            
-            // 1. 生成新的數獨謎題
-            initialGrid = generateSudoku();
-            currentGrid = initialGrid.map(row => [...row]); 
-            
-            // 2. 渲染遊戲板
-            renderGrid(currentGrid);
-        }
-
-        // --- 事件監聽器 ---
-
-        /**
-         * 處理 "自動求解"
-         */
-        solveButton.addEventListener('click', () => {
-            // 複製初始謎題板進行求解
-            let boardToSolve = initialGrid.map(row => [...row]); 
-            
-            if (solveSudoku(boardToSolve)) {
-                currentGrid = boardToSolve; // 更新為完整解
-                renderGrid(currentGrid, false); // 渲染解，不檢查錯誤
-                updateMessage('✅ 數獨已自動求解完畢！', 'blue');
-            } else {
-                updateMessage('❌ 錯誤：該數獨無解。');
-            }
-        });
-
-        /**
-         * 處理 "新遊戲"
-         */
-        newGameButton.addEventListener('click', initGame);
-
-
-        // --- 啟動遊戲 ---
-        document.addEventListener('DOMContentLoaded', initGame);
+        initGame();
     </script>
 </body>
 </html>
