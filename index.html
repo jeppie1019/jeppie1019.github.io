@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>數獨 - 多重難度聖誕版</title>
+    <title>數獨 - 校排1挑戰版</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.js"></script>
     <style>
         :root {
@@ -43,10 +43,10 @@
 
         h1 { color: #2c3e50; font-size: 2.5rem; margin: 0 0 10px 0; letter-spacing: 8px; font-weight: 900; }
 
-        /* 難度選擇按鈕樣式 */
+        /* 難度選擇按鈕 */
         .difficulty-selector { margin-bottom: 20px; }
         .diff-btn {
-            padding: 8px 15px; font-size: 14px; margin: 0 5px; border-radius: 20px;
+            padding: 8px 18px; font-size: 16px; margin: 0 5px; border-radius: 20px;
             border: 2px solid #2c3e50; background: white; cursor: pointer; font-weight: bold; transition: 0.3s;
         }
         .diff-btn.active { background: #2c3e50; color: white; }
@@ -69,6 +69,7 @@
             border: var(--thin-line); box-sizing: border-box; outline: none;
         }
 
+        /* 九宮格加粗 */
         .cell:nth-child(3n) { border-right: var(--bold-line); }
         .cell:nth-child(9n) { border-right: none; }
         .cell:nth-child(n+19):nth-child(-n+27),
@@ -83,11 +84,12 @@
         #taunt-overlay { background: rgba(0,0,0,0.92); z-index: 2000; opacity: 0; display: flex; justify-content: center; align-items: center; transition: opacity 0.3s; }
         .taunt-text { font-size: 10vw; color: #ff0000; font-weight: 900; text-shadow: 0 0 40px rgba(255, 0, 0, 0.8); }
 
-        /* 🎅 聖誕老人層 */
+        /* 🎅 聖誕老人 (最前層) */
         #celebration-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999 !important; }
         .santa-sleigh { position: absolute; left: -150px; font-size: 80px; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.3)); }
         .gift-item { position: absolute; font-size: 40px; animation: drop-anim 3s linear forwards; }
 
+        /* 👍 黑色讚 */
         .thumbs-up {
             position: fixed; top: -80px; font-size: 70px; color: #000;
             z-index: 1000; pointer-events: none;
@@ -111,9 +113,9 @@
         <h1>數 獨</h1>
         
         <div class="difficulty-selector">
-            <button class="diff-btn active" onclick="setDifficulty(35, this)">菜鳥 (Easy)</button>
-            <button class="diff-btn" onclick="setDifficulty(45, this)">老手 (Medium)</button>
-            <button class="diff-btn" onclick="setDifficulty(55, this)">地獄 (Hard)</button>
+            <button class="diff-btn active" onclick="setDifficulty(35, this)">笨笨</button>
+            <button class="diff-btn" onclick="setDifficulty(45, this)">尚可</button>
+            <button class="diff-btn" onclick="setDifficulty(55, this)">校排1</button>
         </div>
 
         <div id="sudoku-grid" class="grid"></div>
@@ -138,7 +140,7 @@
         const messageElement = document.getElementById('message');
 
         let initialGrid = [], currentGrid = [];
-        let holesCount = 35; // 預設挖洞數量
+        let holesCount = 35; 
 
         const COLORS = ['#FFD700', '#FF69B4', '#00FFFF', '#ADFF2F', '#FF4500'];
         const ITEMS = ['🎁', '⭐', '🌙', '✨', '🍭', '❄️'];
@@ -207,11 +209,8 @@
             document.body.classList.remove('victory-bg');
             celebrationOverlay.innerHTML = '';
             messageElement.textContent = "";
-            
             let b = Array(9).fill(0).map(() => Array(9).fill(0));
             solveSudoku(b);
-
-            // 根據難度挖洞
             let count = 0;
             while (count < holesCount) {
                 let r = Math.floor(Math.random() * 9);
@@ -221,7 +220,6 @@
                     count++;
                 }
             }
-            
             initialGrid = b.map(row => [...row]);
             currentGrid = b.map(row => [...row]);
             render();
@@ -254,7 +252,6 @@
             }
             e.target.textContent = val;
             currentGrid[r][c] = val; 
-
             if (!isValid(currentGrid, r, c, val)) {
                 e.target.classList.add('error');
                 triggerBlood();
@@ -274,9 +271,8 @@
         function startCelebration() {
             document.body.classList.add('victory-bg');
             container.classList.add('rotate-win');
-            messageElement.textContent = "🎄 勝利！你太強了！ 🎄";
+            messageElement.textContent = "🎄 聖誕快樂！實力驚人！ 🎄";
             confetti({ particleCount: 250, spread: 90, origin: { y: 0.6 } });
-
             for (let i = 0; i < 10; i++) {
                 const santa = document.createElement('div');
                 santa.className = 'santa-sleigh';
@@ -286,7 +282,6 @@
                 const delay = Math.random() * 3;
                 santa.style.transition = `left ${speed}s linear ${delay}s`;
                 celebrationOverlay.appendChild(santa);
-
                 let giftTimer = setInterval(() => {
                     const rect = santa.getBoundingClientRect();
                     if (rect.left > window.innerWidth) return clearInterval(giftTimer);
