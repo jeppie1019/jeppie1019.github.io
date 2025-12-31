@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>數獨 - 嘲諷回歸版</title>
+    <title>數獨 - 多重難度聖誕版</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.js"></script>
     <style>
         :root {
@@ -32,7 +32,7 @@
             text-align: center;
             background: var(--container-bg);
             padding: 30px;
-            border-radius: 8px;
+            border-radius: 12px;
             box-shadow: 0 30px 70px rgba(0, 0, 0, 0.7);
             position: relative;
             z-index: 10; 
@@ -41,7 +41,15 @@
 
         .rotate-win { transform: rotate(720deg) scale(1.05); }
 
-        h1 { color: #2c3e50; font-size: 2.5rem; margin: 0 0 20px 0; letter-spacing: 8px; font-weight: 900; }
+        h1 { color: #2c3e50; font-size: 2.5rem; margin: 0 0 10px 0; letter-spacing: 8px; font-weight: 900; }
+
+        /* 難度選擇按鈕樣式 */
+        .difficulty-selector { margin-bottom: 20px; }
+        .diff-btn {
+            padding: 8px 15px; font-size: 14px; margin: 0 5px; border-radius: 20px;
+            border: 2px solid #2c3e50; background: white; cursor: pointer; font-weight: bold; transition: 0.3s;
+        }
+        .diff-btn.active { background: #2c3e50; color: white; }
 
         .grid {
             display: grid;
@@ -56,15 +64,9 @@
         .cell {
             width: var(--cell-size);
             height: var(--cell-size);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 24px; 
-            font-weight: 800;
-            cursor: pointer;
-            border: var(--thin-line);
-            box-sizing: border-box;
-            outline: none;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 24px; font-weight: 800; cursor: pointer;
+            border: var(--thin-line); box-sizing: border-box; outline: none;
         }
 
         .cell:nth-child(3n) { border-right: var(--bold-line); }
@@ -75,31 +77,25 @@
         .cell.fixed { background-color: #f8f9fa; color: #7f8c8d; cursor: default; }
         .cell.error { background-color: #ff4757 !important; color: #fff !important; }
 
+        /* 特效層 */
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        #blood-overlay { background: radial-gradient(circle, rgba(255,0,0,0) 40%, rgba(255,0,0,0.6) 100%); z-index: 50; opacity: 0; transition: opacity 0.1s; }
+        #taunt-overlay { background: rgba(0,0,0,0.92); z-index: 2000; opacity: 0; display: flex; justify-content: center; align-items: center; transition: opacity 0.3s; }
+        .taunt-text { font-size: 10vw; color: #ff0000; font-weight: 900; text-shadow: 0 0 40px rgba(255, 0, 0, 0.8); }
+
+        /* 🎅 聖誕老人層 */
+        #celebration-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999 !important; }
+        .santa-sleigh { position: absolute; left: -150px; font-size: 80px; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.3)); }
+        .gift-item { position: absolute; font-size: 40px; animation: drop-anim 3s linear forwards; }
+
         .thumbs-up {
             position: fixed; top: -80px; font-size: 70px; color: #000;
             z-index: 1000; pointer-events: none;
             animation: thumbs-drop 1.2s ease-in forwards;
         }
-        @keyframes thumbs-drop {
-            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(110vh) rotate(-15deg); opacity: 0; }
-        }
 
-        #celebration-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999 !important; }
-        .santa-sleigh { position: absolute; left: -150px; font-size: 80px; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.3)); }
-        .gift-item { position: absolute; font-size: 40px; animation: drop-anim 3s linear forwards; }
-        @keyframes drop-anim {
-            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
-        }
-
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
-        #blood-overlay { background: radial-gradient(circle, rgba(255,0,0,0) 40%, rgba(255,0,0,0.6) 100%); z-index: 50; opacity: 0; transition: opacity 0.1s; }
-        
-        /* --- 修正：確保嘲諷訊息樣式正確 --- */
-        #taunt-overlay { background: rgba(0,0,0,0.92); z-index: 2000; opacity: 0; display: flex; justify-content: center; align-items: center; transition: opacity 0.3s; }
-        .taunt-text { font-size: 10vw; color: #ff0000; font-weight: 900; text-shadow: 0 0 40px rgba(255, 0, 0, 0.8); }
-
+        @keyframes thumbs-drop { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(110vh); opacity: 0; } }
+        @keyframes drop-anim { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
         .shake-screen { animation: screen-shake 0.1s infinite; }
         @keyframes screen-shake { 0%, 100% { transform: translate(2px, 2px); } 50% { transform: translate(-2px, -2px); } }
 
@@ -113,7 +109,15 @@
 
     <div class="container">
         <h1>數 獨</h1>
+        
+        <div class="difficulty-selector">
+            <button class="diff-btn active" onclick="setDifficulty(35, this)">菜鳥 (Easy)</button>
+            <button class="diff-btn" onclick="setDifficulty(45, this)">老手 (Medium)</button>
+            <button class="diff-btn" onclick="setDifficulty(55, this)">地獄 (Hard)</button>
+        </div>
+
         <div id="sudoku-grid" class="grid"></div>
+        
         <div class="controls">
             <button id="solve-button">自動求解</button>
             <button id="new-game-button">新遊戲</button>
@@ -134,8 +138,17 @@
         const messageElement = document.getElementById('message');
 
         let initialGrid = [], currentGrid = [];
+        let holesCount = 35; // 預設挖洞數量
+
         const COLORS = ['#FFD700', '#FF69B4', '#00FFFF', '#ADFF2F', '#FF4500'];
         const ITEMS = ['🎁', '⭐', '🌙', '✨', '🍭', '❄️'];
+
+        function setDifficulty(count, btn) {
+            holesCount = count;
+            document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            initGame();
+        }
 
         function isValid(board, r, c, n) {
             if (n === 0) return true;
@@ -194,12 +207,21 @@
             document.body.classList.remove('victory-bg');
             celebrationOverlay.innerHTML = '';
             messageElement.textContent = "";
+            
             let b = Array(9).fill(0).map(() => Array(9).fill(0));
             solveSudoku(b);
-            for (let i = 0; i < 40; i++) {
-                let r = Math.floor(Math.random() * 9), c = Math.floor(Math.random() * 9);
-                b[r][c] = 0;
+
+            // 根據難度挖洞
+            let count = 0;
+            while (count < holesCount) {
+                let r = Math.floor(Math.random() * 9);
+                let c = Math.floor(Math.random() * 9);
+                if (b[r][c] !== 0) {
+                    b[r][c] = 0;
+                    count++;
+                }
             }
+            
             initialGrid = b.map(row => [...row]);
             currentGrid = b.map(row => [...row]);
             render();
@@ -252,7 +274,7 @@
         function startCelebration() {
             document.body.classList.add('victory-bg');
             container.classList.add('rotate-win');
-            messageElement.textContent = "🎄 聖誕快樂！實力驚人！ 🎄";
+            messageElement.textContent = "🎄 勝利！你太強了！ 🎄";
             confetti({ particleCount: 250, spread: 90, origin: { y: 0.6 } });
 
             for (let i = 0; i < 10; i++) {
@@ -280,18 +302,15 @@
             }
         }
 
-        // --- 修正：恢復自動求解按鈕的嘲諷邏輯 ---
         document.getElementById('solve-button').onclick = () => {
-            messageElement.textContent = "";
-            tauntOverlay.style.opacity = '1'; // 顯示嘲諷
-            
+            tauntOverlay.style.opacity = '1';
             setTimeout(() => {
-                tauntOverlay.style.opacity = '0'; // 隱藏嘲諷
+                tauntOverlay.style.opacity = '0';
                 currentGrid = initialGrid.map(row => [...row]);
                 solveSudoku(currentGrid);
                 render();
-                messageElement.textContent = "已自動求解。";
-            }, 1500); // 等待 1.5 秒
+                messageElement.textContent = "真的嫩到沒救。";
+            }, 1500);
         };
 
         document.getElementById('new-game-button').onclick = initGame;
